@@ -5,12 +5,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema } from '../../schemas/auth';
 import type { LoginFormValues } from '../../schemas/auth';
 import { useAuthStore } from '../../store/authStore';
-import { KeyRound, Mail, AlertCircle, Terminal } from 'lucide-react';
+import { KeyRound, Mail, AlertCircle, Terminal, Eye, EyeOff } from 'lucide-react';
 
 export function Login() {
   const navigate = useNavigate();
   const { login } = useAuthStore();
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   
   const {
     register,
@@ -91,10 +92,18 @@ export function Login() {
                   </div>
                   <input
                     {...register('password')}
-                    type="password"
-                    className="block w-full pl-10 pr-3 py-2 bg-[#050505] border border-[#1F1F1F] rounded-md text-white placeholder-[#5d5f5f] focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition-colors text-sm font-mono"
+                    type={showPassword ? 'text' : 'password'}
+                    className="block w-full pl-10 pr-10 py-2 bg-[#050505] border border-[#1F1F1F] rounded-md text-white placeholder-[#5d5f5f] focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition-colors text-sm font-mono"
                     placeholder="••••••••"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-[#5d5f5f] hover:text-white transition-colors focus:outline-none"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <Eye size={16} /> : <EyeOff size={16} />}
+                  </button>
                 </div>
                 {errors.password && (
                   <p className="text-[#ffb4ab] text-xs mt-1">{errors.password.message}</p>
