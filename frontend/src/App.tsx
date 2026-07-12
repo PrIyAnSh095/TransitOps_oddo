@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
 import { Login } from './pages/auth/Login';
@@ -7,14 +7,16 @@ import { ResetPassword } from './pages/auth/ResetPassword';
 import { GoogleOAuthError } from './pages/auth/GoogleOAuthError';
 import { AppShell } from './layouts/AppShell';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { NotFound } from './pages/NotFound';
 
 // Placeholder Pages
-const Dashboard = () => <div className="p-4 text-white">Dashboard Page - Implement in Phase 2</div>;
-const Vehicles = () => <div className="p-4 text-white">Vehicles Page - Implement in Phase 3</div>;
-const Drivers = () => <div className="p-4 text-white">Drivers Page - Implement in Phase 4</div>;
-const Trips = () => <div className="p-4 text-white">Trips Page - Implement in Phase 5</div>;
-const Maintenance = () => <div className="p-4 text-white">Maintenance Page - Implement in Phase 6</div>;
-const Expenses = () => <div className="p-4 text-white">Expenses Page - Implement in Phase 7</div>;
+const Dashboard = lazy(() => import('./pages/dashboard/Dashboard.tsx'));
+const Vehicles = lazy(() => import('./pages/vehicles/Vehicles.tsx'));
+const Drivers = lazy(() => import('./pages/drivers/Drivers.tsx'));
+const Trips = lazy(() => import('./pages/trips/Trips.tsx'));
+const Maintenance = lazy(() => import('./pages/maintenance/Maintenance.tsx'));
+const Expenses = lazy(() => import('./pages/expenses/Expenses.tsx'));
 const Reports = () => <div className="p-4 text-white">Reports Page - Implement in Phase 8</div>;
 const Settings = () => <div className="p-4 text-white">Settings Page - Implement in Phase 10</div>;
 
@@ -34,12 +36,13 @@ export default function App() {
   }
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/auth/forgot-password" element={<ForgotPassword />} />
-        <Route path="/auth/reset-password" element={<ResetPassword />} />
-        <Route path="/auth/google-error" element={<GoogleOAuthError />} />
+    <ErrorBoundary>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+          <Route path="/auth/reset-password" element={<ResetPassword />} />
+          <Route path="/auth/google-error" element={<GoogleOAuthError />} />
         
         {/* Protected Routes inside App Shell */}
         <Route element={<ProtectedRoute />}>
@@ -47,21 +50,45 @@ export default function App() {
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             
             {/* Dashboard available to everyone */}
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard" element={
+              <Suspense fallback={<div className="p-8 text-white"><span className="animate-pulse">Loading dashboard buffer...</span></div>}>
+                <Dashboard />
+              </Suspense>
+            } />
             
             {/* Role specific routes based on RBAC matrix */}
             <Route element={<ProtectedRoute allowedRoles={['FleetManager', 'Dispatcher', 'FinancialAnalyst']} />}>
-              <Route path="/vehicles" element={<Vehicles />} />
+              <Route path="/vehicles" element={
+                <Suspense fallback={<div className="p-8 text-white"><span className="animate-pulse">Loading vehicle registry...</span></div>}>
+                  <Vehicles />
+                </Suspense>
+              } />
             </Route>
             
             <Route element={<ProtectedRoute allowedRoles={['FleetManager', 'Dispatcher', 'SafetyOfficer']} />}>
-              <Route path="/drivers" element={<Drivers />} />
-              <Route path="/trips" element={<Trips />} />
+              <Route path="/drivers" element={
+                <Suspense fallback={<div className="p-8 text-white"><span className="animate-pulse">Loading driver management...</span></div>}>
+                  <Drivers />
+                </Suspense>
+              } />
+              <Route path="/trips" element={
+                <Suspense fallback={<div className="p-8 text-white"><span className="animate-pulse">Loading trips...</span></div>}>
+                  <Trips />
+                </Suspense>
+              } />
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={['FleetManager', 'FinancialAnalyst']} />}>
-              <Route path="/maintenance" element={<Maintenance />} />
-              <Route path="/expenses" element={<Expenses />} />
+              <Route path="/maintenance" element={
+                <Suspense fallback={<div className="p-8 text-white"><span className="animate-pulse">Loading maintenance...</span></div>}>
+                  <Maintenance />
+                </Suspense>
+              } />
+              <Route path="/expenses" element={
+                <Suspense fallback={<div className="p-8 text-white"><span className="animate-pulse">Loading expenses...</span></div>}>
+                  <Expenses />
+                </Suspense>
+              } />
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={['FleetManager', 'SafetyOfficer', 'FinancialAnalyst']} />}>
@@ -75,8 +102,9 @@ export default function App() {
           </Route>
         </Route>
 
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
+    </ErrorBoundary>
   );
 }

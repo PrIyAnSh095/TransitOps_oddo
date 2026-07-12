@@ -33,7 +33,7 @@ export async function apiCall<T>(url: string, options?: RequestInit): Promise<T>
     }
 
     const body = options?.body ? JSON.parse(options.body as string) : undefined;
-    return handler(body) as Promise<T>;
+    return handler(body, path) as Promise<T>;
   }
 
   // Real fetch implementation
