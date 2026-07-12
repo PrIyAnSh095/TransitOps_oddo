@@ -37,3 +37,5 @@ Thumbs.db
 .env.test.local
 .env.production.local
 coverage/
+
+TransitOps_Implementation_Plan.md
