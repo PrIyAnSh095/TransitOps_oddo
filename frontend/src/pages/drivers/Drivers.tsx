@@ -1,8 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Plus, Search, Edit2, UserX, AlertTriangle, ShieldAlert, ShieldCheck, Shield, Mail } from 'lucide-react';
-import { getDrivers, updateDriver } from '../../services/drivers.ts';
+import { getDrivers, updateDriver, getDriversSummary } from '../../services/drivers.ts';
+import type { SummaryData } from '../../services/vehicles.ts';
 import type { Driver } from '../../types';
 import { LoadingBuffer } from '../../components/ui/Loading.tsx';
+import { SummaryCard } from '../../components/ui/SummaryCard.tsx';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { DriverModal } from './DriverModal.tsx';
 import { useAuthStore } from '../../store/authStore';
 
@@ -23,12 +26,14 @@ const getExpiryStatus = (expiryDateStr: string) => {
 export default function Drivers() {
   const { user } = useAuthStore();
   const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [summary, setSummary] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [categoryFilter, setCategoryFilter] = useState('All');
+  const [period, setPeriod] = useState('monthly');
   const [sortField, setSortField] = useState<keyof Driver>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
@@ -39,8 +44,10 @@ export default function Drivers() {
   const fetchDrivers = async () => {
     try {
       setLoading(true);
-      const data = await getDrivers();
-      setDrivers(data);
+      const filters = { search, status: statusFilter, period };
+      const [dData, sData] = await Promise.all([getDrivers(filters), getDriversSummary(filters)]);
+      setDrivers(dData);
+      setSummary(sData);
     } catch (err: any) {
       setError(err);
     } finally {
@@ -50,7 +57,7 @@ export default function Drivers() {
 
   useEffect(() => {
     fetchDrivers();
-  }, []);
+  }, [search, statusFilter, period]);
 
   const handleSort = (field: keyof Driver) => {
     if (sortField === field) {
@@ -81,13 +88,10 @@ export default function Drivers() {
   };
 
   const filteredAndSortedDrivers = useMemo(() => {
-    return drivers
+    return [...drivers]
       .filter(d => {
-        const matchesSearch = d.name.toLowerCase().includes(search.toLowerCase()) || 
-                              d.licenseNumber.toLowerCase().includes(search.toLowerCase());
-        const matchesStatus = statusFilter === 'All' || d.status === statusFilter;
         const matchesCategory = categoryFilter === 'All' || d.licenseCategory === categoryFilter;
-        return matchesSearch && matchesStatus && matchesCategory;
+        return matchesCategory;
       })
       .sort((a, b) => {
         let aVal = a[sortField];
@@ -100,10 +104,10 @@ export default function Drivers() {
         }
         return 0;
       });
-  }, [drivers, search, statusFilter, categoryFilter, sortField, sortOrder]);
+  }, [drivers, categoryFilter, sortField, sortOrder]);
 
   if (error) throw error;
-  if (loading) return <LoadingBuffer message="Loading Driver Management..." />;
+  if (loading && !drivers.length) return <LoadingBuffer message="Loading Driver Management..." />;
 
   return (
     <div className="space-y-6">
@@ -153,7 +157,56 @@ export default function Drivers() {
         </select>
       </div>
 
-      <div className="bg-[#0A0A0A] border border-[#1F1F1F] rounded-lg overflow-x-auto">
+      {summary && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 relative">
+          {loading && (
+            <div className="absolute inset-0 bg-black/50 z-10 flex items-center justify-center rounded-lg backdrop-blur-sm">
+              <div className="w-8 h-8 border-4 border-[#48ddbc] border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          )}
+          <div className="bg-[#0A0A0A] border border-[#1F1F1F] rounded-lg p-5 lg:col-span-2">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-[#c4c7c8]">Driver Activity</h3>
+              <select 
+                value={period} 
+                onChange={(e) => setPeriod(e.target.value)}
+                className="bg-[#131313] border border-[#262626] text-[#c4c7c8] text-xs px-2 py-1 rounded focus:outline-none"
+              >
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
+              </select>
+            </div>
+            <div className="h-[250px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={summary.chartData}>
+                  <defs>
+                    <linearGradient id="colorDrivers" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#558ded" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#558ded" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1F1F1F" vertical={false} />
+                  <XAxis dataKey="name" stroke="#5d5f5f" tickLine={false} axisLine={false} fontSize={12} />
+                  <YAxis stroke="#5d5f5f" tickLine={false} axisLine={false} fontSize={12} />
+                  <Tooltip contentStyle={{ backgroundColor: '#131313', border: '1px solid #262626', borderRadius: '4px' }} />
+                  <Area type="monotone" dataKey="value" stroke="#558ded" strokeWidth={3} fillOpacity={1} fill="url(#colorDrivers)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+          <div className="lg:col-span-1">
+            <SummaryCard title="Driver Summary" stats={summary.stats.map(s => ({ label: s.label, value: s.value, color: s.color }))} />
+          </div>
+        </div>
+      )}
+
+      <div className="bg-[#0A0A0A] border border-[#1F1F1F] rounded-lg overflow-x-auto relative">
+        {loading && (
+          <div className="absolute inset-0 bg-black/50 z-10 flex items-center justify-center backdrop-blur-sm">
+            <div className="w-8 h-8 border-4 border-[#48ddbc] border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        )}
         <table className="w-full text-left text-sm text-[#c4c7c8]">
           <thead className="bg-[#131313] border-b border-[#1F1F1F] text-xs uppercase tracking-wider">
             <tr>

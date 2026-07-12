@@ -4,7 +4,8 @@ const {
   getMaintenanceLogs,
   getMaintenanceLogById,
   createMaintenanceLog,
-  closeMaintenanceLog
+  closeMaintenanceLog,
+  getMaintenanceSummary
 } = require('../controllers/maintenance.controller');
 const { protect } = require('../middleware/auth');
 const { globalLimiter } = require('../middleware/rateLimiter');
@@ -12,6 +13,9 @@ const { validateMaintenanceCreation } = require('../validators/maintenance.valid
 
 router.use(protect);
 router.use(globalLimiter);
+
+router.route('/summary')
+  .get(getMaintenanceSummary);
 
 router.route('/')
   .get(getMaintenanceLogs)

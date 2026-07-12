@@ -1,9 +1,62 @@
 const maintenanceRepository = require('../repositories/maintenance.repository');
 const vehicleRepository = require('../repositories/vehicle.repository');
 
+const MaintenanceLog = require('../models/MaintananceLog');
+const { buildTimeSeriesPipeline, formatChartData } = require('../utils/analytics');
+
 class MaintenanceService {
-  async getAllMaintenanceLogs() {
-    return await maintenanceRepository.findAll();
+  async getAllMaintenanceLogs(query = {}) {
+    const { status, search, fromDate, toDate } = query;
+    const match = {};
+
+    if (status && status !== 'All') match.status = status.toUpperCase();
+    if (fromDate || toDate) {
+      match.createdAt = {};
+      if (fromDate) match.createdAt.$gte = new Date(fromDate);
+      if (toDate) match.createdAt.$lte = new Date(toDate);
+    }
+    
+    // Simple regex search on type, description
+    if (search) {
+      match.$or = [
+        { type: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    return await MaintenanceLog.find(match).populate('vehicle').sort({ createdAt: -1 });
+  }
+
+  async getMaintenanceSummary(query) {
+    const pipeline = buildTimeSeriesPipeline(query, 'createdAt', {}, '$cost');
+    const results = await MaintenanceLog.aggregate(pipeline);
+    const chartData = formatChartData(results, query.period || 'monthly');
+
+    // Also get overall stats for the current filters
+    const match = pipeline[0].$match;
+    const statsResult = await MaintenanceLog.aggregate([
+      { $match: match },
+      { 
+        $group: { 
+          _id: null, 
+          activeRepairs: { $sum: { $cond: [{ $eq: ['$status', 'ACTIVE'] }, 1, 0] } },
+          completed: { $sum: { $cond: [{ $eq: ['$status', 'COMPLETED'] }, 1, 0] } },
+          totalCost: { $sum: '$cost' }
+        } 
+      }
+    ]);
+
+    const stats = statsResult[0] || { activeRepairs: 0, completed: 0, totalCost: 0 };
+
+    return {
+      chartData,
+      stats: [
+        { label: 'Active Repairs', value: stats.activeRepairs, color: '#ff6b6b' },
+        { label: 'Completed', value: stats.completed, color: '#48ddbc' },
+        { label: 'Total Cost', value: `$${(stats.totalCost || 0).toLocaleString()}`, color: '#ffc633' },
+        { label: 'Avg Downtime', value: '2.5 Days' } // Hardcoded average for now
+      ]
+    };
   }
 
   async getMaintenanceLogById(id) {

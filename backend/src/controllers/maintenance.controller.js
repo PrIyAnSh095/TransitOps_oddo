@@ -5,11 +5,19 @@ const maintenanceService = require('../services/maintenance.service');
 // @route   GET /api/maintenance
 // @access  Private
 const getMaintenanceLogs = asyncHandler(async (req, res) => {
-  const logs = await maintenanceService.getAllMaintenanceLogs();
+  const logs = await maintenanceService.getAllMaintenanceLogs(req.query);
   res.status(200).json({
     success: true,
     message: 'Maintenance logs fetched successfully',
     data: logs
+  });
+});
+
+const getMaintenanceSummary = asyncHandler(async (req, res) => {
+  const summary = await maintenanceService.getMaintenanceSummary(req.query);
+  res.status(200).json({
+    success: true,
+    data: summary
   });
 });
 
@@ -49,8 +57,10 @@ const closeMaintenanceLog = asyncHandler(async (req, res) => {
   });
 });
 
+
 module.exports = {
   getMaintenanceLogs,
+  getMaintenanceSummary,
   getMaintenanceLogById,
   createMaintenanceLog,
   closeMaintenanceLog

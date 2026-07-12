@@ -3,6 +3,7 @@ const router = express.Router();
 const {
   getTrips,
   getTripById,
+  getTripSummary,
   createTrip,
   dispatchTrip,
   completeTrip,
@@ -14,6 +15,9 @@ const { validateTripCreation, validateTripCompletion } = require('../validators/
 
 router.use(protect);
 router.use(globalLimiter);
+
+router.route('/summary')
+  .get(getTripSummary);
 
 router.route('/')
   .get(getTrips)

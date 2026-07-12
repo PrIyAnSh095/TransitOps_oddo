@@ -52,12 +52,74 @@ function splitName(fullName = '') {
   return { firstName, lastName };
 }
 
+const { buildTimeSeriesPipeline, formatChartData } = require('../utils/analytics');
+
 // @desc  Get all drivers
 // @route GET /api/drivers
 // @access Private
 const getDrivers = asyncHandler(async (req, res) => {
-  const drivers = await Driver.find({ isActive: true }).sort({ createdAt: -1 });
-  res.json(drivers.map(toClientDriver));
+  const { status, search, fromDate, toDate } = req.query;
+  const match = { isActive: true };
+
+  if (status && status !== 'All') {
+    match.status = mapStatusToDb(status);
+  }
+
+  if (fromDate || toDate) {
+    match.createdAt = {};
+    if (fromDate) match.createdAt.$gte = new Date(fromDate);
+    if (toDate) match.createdAt.$lte = new Date(toDate);
+  }
+
+  if (search) {
+    match.$or = [
+      { firstName: { $regex: search, $options: 'i' } },
+      { lastName: { $regex: search, $options: 'i' } },
+      { licenseNumber: { $regex: search, $options: 'i' } }
+    ];
+  }
+
+  const drivers = await Driver.find(match).sort({ createdAt: -1 });
+  res.json({
+    success: true,
+    data: drivers.map(toClientDriver)
+  });
+});
+
+const getDriverSummary = asyncHandler(async (req, res) => {
+  const pipeline = buildTimeSeriesPipeline(req.query, 'createdAt');
+  const results = await Driver.aggregate(pipeline);
+  const chartData = formatChartData(results, req.query.period || 'monthly');
+
+  // Overall Stats
+  const match = pipeline[0].$match;
+  const statsResult = await Driver.aggregate([
+    { $match: match },
+    {
+      $group: {
+        _id: null,
+        total: { $sum: 1 },
+        available: { $sum: { $cond: [{ $eq: ['$status', 'AVAILABLE'] }, 1, 0] } },
+        onDuty: { $sum: { $cond: [{ $eq: ['$status', 'ON_TRIP'] }, 1, 0] } },
+        avgSafetyScore: { $avg: '$safetyScore' }
+      }
+    }
+  ]);
+
+  const stats = statsResult[0] || { total: 0, available: 0, onDuty: 0, avgSafetyScore: 0 };
+
+  res.json({
+    success: true,
+    data: {
+      chartData,
+      stats: [
+        { label: 'Total Drivers', value: stats.total },
+        { label: 'On Duty', value: stats.onDuty, color: '#558ded' },
+        { label: 'Available', value: stats.available, color: '#48ddbc' },
+        { label: 'Avg Safety Score', value: `${Math.round(stats.avgSafetyScore || 0)}%` }
+      ]
+    }
+  });
 });
 
 // @desc  Create a driver
@@ -148,4 +210,4 @@ const deleteDriver = asyncHandler(async (req, res) => {
   res.status(204).send();
 });
 
-module.exports = { getDrivers, createDriver, updateDriver, deleteDriver };
+module.exports = { getDrivers, getDriverSummary, createDriver, updateDriver, deleteDriver };

@@ -11,6 +11,10 @@ const vehicleRoutes = require('./routes/vehicle.routes');
 const driverRoutes = require('./routes/driver.routes');
 const tripRoutes = require('./routes/trip.routes');
 const maintenanceRoutes = require('./routes/maintenance.routes');
+const expenseRoutes = require('./routes/expense.routes');
+const reportRoutes = require('./routes/report.routes');
+const dashboardRoutes = require('./routes/dashboard.routes');
+const fuelLogRoutes = require('./routes/fuelLog.routes');
 
 const app = express();
 
@@ -34,10 +38,14 @@ app.use('/api', globalLimiter);
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/drivers', driverRoutes);
 app.use('/api/trips', tripRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
+app.use('/api/expenses', expenseRoutes);
+app.use('/api/fuel-logs', fuelLogRoutes);
+app.use('/api/reports', reportRoutes);
 
 // Error Handling
 app.use(notFound);

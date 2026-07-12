@@ -3,6 +3,7 @@ const router = express.Router();
 const { protect } = require('../middleware/auth');
 const {
   getDrivers,
+  getDriverSummary,
   createDriver,
   updateDriver,
   deleteDriver,
@@ -10,6 +11,7 @@ const {
 
 router.use(protect); // all driver routes require auth
 
+router.get('/summary', getDriverSummary);
 router.get('/', getDrivers);
 router.post('/', createDriver);
 router.put('/:id', updateDriver);

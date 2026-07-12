@@ -3,6 +3,7 @@ const router = express.Router();
 const { protect } = require('../middleware/auth');
 const {
   getVehicles,
+  getVehicleSummary,
   createVehicle,
   updateVehicle,
   deleteVehicle,
@@ -10,6 +11,7 @@ const {
 
 router.use(protect); // all vehicle routes require auth
 
+router.get('/summary', getVehicleSummary);
 router.get('/', getVehicles);
 router.post('/', createVehicle);
 router.put('/:id', updateVehicle);
