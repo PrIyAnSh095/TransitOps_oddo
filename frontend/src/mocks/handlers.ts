@@ -286,6 +286,93 @@ const handlers: Record<string, (body?: any, path?: string) => Promise<any>> = {
     };
     expenses.unshift(newExpense);
     return newExpense;
+  },
+  'GET /reports/analytics': async () => {
+    await delay(500);
+
+    // 1. Fuel Efficiency = Total Distance / Total Fuel Consumed
+    const completedTrips = trips.filter(t => t.status === 'Completed' && t.actualDistanceKm && t.fuelConsumedLiters);
+    const totalDist = completedTrips.reduce((sum, t) => sum + (t.actualDistanceKm || 0), 0);
+    const totalFuel = completedTrips.reduce((sum, t) => sum + (t.fuelConsumedLiters || 0), 0);
+    const fuelEfficiency = totalFuel > 0 ? (totalDist / totalFuel) : 0;
+
+    // 2. Fleet Utilization = (Available + On Trip) / Total Vehicles %
+    const activeVehicles = vehicles.filter(v => v.status === 'Available' || v.status === 'On Trip').length;
+    const fleetUtilization = vehicles.length > 0 ? (activeVehicles / vehicles.length) * 100 : 0;
+
+    // 3. Operational Cost = All expenses + all fuel logs + all maintenance logs
+    const totalExpensesCost = expenses.reduce((sum, e) => sum + e.amount, 0);
+    const totalFuelCost = fuelLogs.reduce((sum, f) => sum + f.cost, 0);
+    const totalMaintCost = maintenanceLogs.reduce((sum, m) => sum + m.cost, 0);
+    const operationalCost = totalExpensesCost + totalFuelCost + totalMaintCost;
+
+    // 4. Vehicle ROI = (Revenue - (Maintenance + Fuel)) / Acquisition Cost
+    // Assumption: Revenue = actualDistanceKm * $5.00
+    let totalRevenue = 0;
+    let totalAcquisition = 0;
+    
+    // Revenue per vehicle map
+    const revMap: Record<string, number> = {};
+    completedTrips.forEach(t => {
+      if (t.vehicleId) {
+        const rev = (t.actualDistanceKm || 0) * 5;
+        revMap[t.vehicleId] = (revMap[t.vehicleId] || 0) + rev;
+        totalRevenue += rev;
+      }
+    });
+
+    vehicles.forEach(v => {
+      totalAcquisition += v.acquisitionCost || 0;
+    });
+
+    const vehicleROI = totalAcquisition > 0 ? ((totalRevenue - (totalMaintCost + totalFuelCost)) / totalAcquisition) * 100 : 0;
+
+    // Top Costliest Vehicles
+    const costMap: Record<string, number> = {};
+    fuelLogs.forEach(f => {
+      if (f.vehicleId) costMap[f.vehicleId] = (costMap[f.vehicleId] || 0) + f.cost;
+    });
+    maintenanceLogs.forEach(m => {
+      costMap[m.vehicleId] = (costMap[m.vehicleId] || 0) + m.cost;
+    });
+    expenses.forEach(e => {
+      if (e.vehicleId) costMap[e.vehicleId] = (costMap[e.vehicleId] || 0) + e.amount;
+    });
+
+    const topCostliestVehicles = Object.entries(costMap)
+      .map(([id, cost]) => {
+        const v = vehicles.find(v => v.id === id);
+        return {
+          id,
+          name: v ? `${v.registrationNumber} (${v.name})` : 'Unknown',
+          cost,
+          revenue: revMap[id] || 0,
+          acquisitionCost: v?.acquisitionCost || 0
+        };
+      })
+      .sort((a, b) => b.cost - a.cost)
+      .slice(0, 5);
+
+    // Mock Monthly Revenue
+    const cleanMonthlyRevenue = [
+      { month: 'Jan', revenue: 45000 },
+      { month: 'Feb', revenue: 52000 },
+      { month: 'Mar', revenue: 48000 },
+      { month: 'Apr', revenue: 61000 },
+      { month: 'May', revenue: 59000 },
+      { month: 'Jun', revenue: totalRevenue > 65000 ? totalRevenue : 65000 },
+    ];
+
+    return {
+      fuelEfficiency,
+      fleetUtilization,
+      operationalCost,
+      vehicleROI,
+      monthlyRevenue: cleanMonthlyRevenue,
+      topCostliestVehicles,
+      totalRevenue,
+      totalAcquisition
+    };
   }
 };
 

@@ -17,7 +17,7 @@ const Drivers = lazy(() => import('./pages/drivers/Drivers.tsx'));
 const Trips = lazy(() => import('./pages/trips/Trips.tsx'));
 const Maintenance = lazy(() => import('./pages/maintenance/Maintenance.tsx'));
 const Expenses = lazy(() => import('./pages/expenses/Expenses.tsx'));
-const Reports = () => <div className="p-4 text-white">Reports Page - Implement in Phase 8</div>;
+const Reports = lazy(() => import('./pages/reports/Reports.tsx'));
 const Settings = () => <div className="p-4 text-white">Settings Page - Implement in Phase 10</div>;
 
 export default function App() {
@@ -92,7 +92,11 @@ export default function App() {
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={['FleetManager', 'SafetyOfficer', 'FinancialAnalyst']} />}>
-              <Route path="/reports" element={<Reports />} />
+              <Route path="/reports" element={
+                <Suspense fallback={<div className="p-8 text-white"><span className="animate-pulse">Loading reports...</span></div>}>
+                  <Reports />
+                </Suspense>
+              } />
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={['FleetManager']} />}>
