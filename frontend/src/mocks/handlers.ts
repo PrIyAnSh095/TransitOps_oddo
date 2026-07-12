@@ -30,6 +30,37 @@ const handlers: Record<string, (body?: any) => Promise<any>> = {
     if (!user) throw new Error('User not found');
     
     return user;
+  },
+  'GET /dashboard/kpis': async () => {
+    await delay(800); // Trigger buffer
+    return {
+      activeVehicles: 4,
+      totalVehicles: 5,
+      activeTrips: 2,
+      totalDrivers: 5,
+      alerts: 1, // vehicle in shop
+      trendData: [
+        { name: 'Mon', cost: 400 },
+        { name: 'Tue', cost: 300 },
+        { name: 'Wed', cost: 550 },
+        { name: 'Thu', cost: 450 },
+        { name: 'Fri', cost: 700 },
+        { name: 'Sat', cost: 200 },
+        { name: 'Sun', cost: 100 },
+      ]
+    };
+  },
+  'GET /dashboard/dispatcher': async () => {
+    await delay(800); // Trigger buffer
+    return {
+      activeTrips: [
+        { id: 't2', code: 'TR002', status: 'Dispatched', vehicle: 'Van-01', driver: 'Alice Smith', destination: 'Store 2' }
+      ],
+      availableDrivers: [
+        { id: 'd1', name: 'Alice Smith', status: 'Available' },
+        { id: 'd3', name: 'Charlie Brown', status: 'Available' }
+      ]
+    };
   }
 };
 

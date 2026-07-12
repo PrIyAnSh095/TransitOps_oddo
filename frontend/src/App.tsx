@@ -1,12 +1,14 @@
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
 import { Login } from './pages/auth/Login';
 import { AppShell } from './layouts/AppShell';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { NotFound } from './pages/NotFound';
 
 // Placeholder Pages
-const Dashboard = () => <div className="p-4 text-white">Dashboard Page - Implement in Phase 2</div>;
+const Dashboard = lazy(() => import('./pages/dashboard/Dashboard.tsx'));
 const Vehicles = () => <div className="p-4 text-white">Vehicles Page - Implement in Phase 3</div>;
 const Drivers = () => <div className="p-4 text-white">Drivers Page - Implement in Phase 4</div>;
 const Trips = () => <div className="p-4 text-white">Trips Page - Implement in Phase 5</div>;
@@ -31,9 +33,10 @@ export default function App() {
   }
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<Login />} />
+    <ErrorBoundary>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<Login />} />
         
         {/* Protected Routes inside App Shell */}
         <Route element={<ProtectedRoute />}>
@@ -41,7 +44,11 @@ export default function App() {
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             
             {/* Dashboard available to everyone */}
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard" element={
+              <Suspense fallback={<div className="p-8 text-white"><span className="animate-pulse">Loading dashboard buffer...</span></div>}>
+                <Dashboard />
+              </Suspense>
+            } />
             
             {/* Role specific routes based on RBAC matrix */}
             <Route element={<ProtectedRoute allowedRoles={['FleetManager', 'Dispatcher', 'FinancialAnalyst']} />}>
@@ -69,8 +76,9 @@ export default function App() {
           </Route>
         </Route>
 
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
+    </ErrorBoundary>
   );
 }
