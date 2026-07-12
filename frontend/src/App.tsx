@@ -9,7 +9,7 @@ import { NotFound } from './pages/NotFound';
 
 // Placeholder Pages
 const Dashboard = lazy(() => import('./pages/dashboard/Dashboard.tsx'));
-const Vehicles = () => <div className="p-4 text-white">Vehicles Page - Implement in Phase 3</div>;
+const Vehicles = lazy(() => import('./pages/vehicles/Vehicles.tsx'));
 const Drivers = () => <div className="p-4 text-white">Drivers Page - Implement in Phase 4</div>;
 const Trips = () => <div className="p-4 text-white">Trips Page - Implement in Phase 5</div>;
 const Maintenance = () => <div className="p-4 text-white">Maintenance Page - Implement in Phase 6</div>;
@@ -52,7 +52,11 @@ export default function App() {
             
             {/* Role specific routes based on RBAC matrix */}
             <Route element={<ProtectedRoute allowedRoles={['FleetManager', 'Dispatcher', 'FinancialAnalyst']} />}>
-              <Route path="/vehicles" element={<Vehicles />} />
+              <Route path="/vehicles" element={
+                <Suspense fallback={<div className="p-8 text-white"><span className="animate-pulse">Loading vehicle registry...</span></div>}>
+                  <Vehicles />
+                </Suspense>
+              } />
             </Route>
             
             <Route element={<ProtectedRoute allowedRoles={['FleetManager', 'Dispatcher', 'SafetyOfficer']} />}>

@@ -1,4 +1,5 @@
-import type { User } from '../types';
+import type { User, Vehicle } from '../types';
+import { mockVehicles } from './data.ts';
 
 // Mock users for different roles
 const mockUsers: Record<string, User> = {
@@ -8,9 +9,11 @@ const mockUsers: Record<string, User> = {
   'finance@test.com': { id: 'u4', name: 'Financial Analyst', email: 'finance@test.com', role: 'FinancialAnalyst', createdAt: new Date().toISOString() },
 };
 
+let vehicles = [...mockVehicles];
+
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const handlers: Record<string, (body?: any) => Promise<any>> = {
+const handlers: Record<string, (body?: any, path?: string) => Promise<any>> = {
   'POST /auth/login': async (body: any) => {
     await delay(800);
     const user = mockUsers[body.email];
@@ -61,6 +64,35 @@ const handlers: Record<string, (body?: any) => Promise<any>> = {
         { id: 'd3', name: 'Charlie Brown', status: 'Available' }
       ]
     };
+  },
+  'GET /vehicles': async () => {
+    await delay(500);
+    return vehicles;
+  },
+  'POST /vehicles': async (body: any) => {
+    await delay(500);
+    const newVehicle: Vehicle = {
+      ...body,
+      id: `v${Date.now()}`,
+      status: 'Available', // initial status
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    vehicles.push(newVehicle);
+    return newVehicle;
+  },
+  'PUT /vehicles/:id': async (body: any, path?: string) => {
+    await delay(500);
+    const id = path?.split('/').pop();
+    const index = vehicles.findIndex(v => v.id === id);
+    if (index === -1) throw new Error('Vehicle not found');
+    
+    vehicles[index] = {
+      ...vehicles[index],
+      ...body,
+      updatedAt: new Date().toISOString(),
+    };
+    return vehicles[index];
   }
 };
 
