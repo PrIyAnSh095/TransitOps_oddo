@@ -5,8 +5,10 @@ import type { Trip } from '../../types';
 import { LoadingBuffer } from '../../components/ui/Loading.tsx';
 import { TripCreateModal } from './TripCreateModal.tsx';
 import { TripCompleteModal } from './TripCompleteModal.tsx';
+import { useAuthStore } from '../../store/authStore';
 
 export default function Trips() {
+  const { user } = useAuthStore();
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -72,12 +74,14 @@ export default function Trips() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h2 className="text-xl font-bold tracking-tight text-white font-sans">Trip Management</h2>
-        <button
-          onClick={() => setIsCreateModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-white text-black text-sm font-medium rounded hover:bg-[#e5e2e1] transition-colors"
-        >
-          <Plus size={16} /> Create Trip
-        </button>
+        {user?.role === 'Dispatcher' && (
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-white text-black text-sm font-medium rounded hover:bg-[#e5e2e1] transition-colors"
+          >
+            <Plus size={16} /> Create Trip
+          </button>
+        )}
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 bg-[#0A0A0A] p-4 rounded-lg border border-[#1F1F1F]">
@@ -112,7 +116,7 @@ export default function Trips() {
               <th className="p-4">Route</th>
               <th className="p-4">Cargo / Dist</th>
               <th className="p-4">Lifecycle</th>
-              <th className="p-4 text-right">Actions</th>
+              {user?.role === 'Dispatcher' && <th className="p-4 text-right">Actions</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-[#1F1F1F]">
@@ -149,35 +153,37 @@ export default function Trips() {
                     {trip.status === 'Cancelled' && trip.cancelledAt && `Cancelled: ${new Date(trip.cancelledAt).toLocaleDateString()}`}
                   </div>
                 </td>
-                <td className="p-4 text-right space-x-2 whitespace-nowrap">
-                  {trip.status === 'Draft' && (
-                    <button 
-                      onClick={() => handleDispatch(trip)}
-                      className="p-1.5 text-[#8e9192] hover:text-[#558ded] hover:bg-[#00173b] rounded transition-colors"
-                      title="Dispatch"
-                    >
-                      <Send size={16} />
-                    </button>
-                  )}
-                  {trip.status === 'Dispatched' && (
-                    <>
+                {user?.role === 'Dispatcher' && (
+                  <td className="p-4 text-right space-x-2 whitespace-nowrap">
+                    {trip.status === 'Draft' && (
                       <button 
-                        onClick={() => setCompleteTripTarget(trip)}
-                        className="p-1.5 text-[#8e9192] hover:text-[#48ddbc] hover:bg-[#002019] rounded transition-colors"
-                        title="Complete Trip"
+                        onClick={() => handleDispatch(trip)}
+                        className="p-1.5 text-[#8e9192] hover:text-[#558ded] hover:bg-[#00173b] rounded transition-colors"
+                        title="Dispatch"
                       >
-                        <CheckCircle size={16} />
+                        <Send size={16} />
                       </button>
-                      <button 
-                        onClick={() => handleCancel(trip)}
-                        className="p-1.5 text-[#8e9192] hover:text-[#ffb4ab] hover:bg-[#1f1111] rounded transition-colors"
-                        title="Cancel Trip"
-                      >
-                        <XCircle size={16} />
-                      </button>
-                    </>
-                  )}
-                </td>
+                    )}
+                    {trip.status === 'Dispatched' && (
+                      <>
+                        <button 
+                          onClick={() => setCompleteTripTarget(trip)}
+                          className="p-1.5 text-[#8e9192] hover:text-[#48ddbc] hover:bg-[#002019] rounded transition-colors"
+                          title="Complete Trip"
+                        >
+                          <CheckCircle size={16} />
+                        </button>
+                        <button 
+                          onClick={() => handleCancel(trip)}
+                          className="p-1.5 text-[#8e9192] hover:text-[#ffb4ab] hover:bg-[#1f1111] rounded transition-colors"
+                          title="Cancel Trip"
+                        >
+                          <XCircle size={16} />
+                        </button>
+                      </>
+                    )}
+                  </td>
+                )}
               </tr>
             ))}
             {filteredTrips.length === 0 && (

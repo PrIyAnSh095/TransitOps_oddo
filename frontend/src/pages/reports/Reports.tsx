@@ -3,8 +3,10 @@ import { Download, TrendingUp, Truck, Fuel, DollarSign, Activity } from 'lucide-
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { getAnalytics, type AnalyticsPayload } from '../../services/reports.ts';
 import { LoadingBuffer } from '../../components/ui/Loading.tsx';
+import { useAuthStore } from '../../store/authStore';
 
 export default function Reports() {
+  const { user } = useAuthStore();
   const [data, setData] = useState<AnalyticsPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -72,12 +74,14 @@ export default function Reports() {
           <h2 className="text-xl font-bold tracking-tight text-white font-sans">Reports & Analytics</h2>
           <p className="text-sm text-[#8e9192]">Executive fleet performance overview</p>
         </div>
-        <button
-          onClick={handleExportCSV}
-          className="flex items-center gap-2 px-4 py-2 bg-white text-black text-sm font-medium rounded hover:bg-[#e5e2e1] transition-colors"
-        >
-          <Download size={16} /> Export CSV
-        </button>
+        {user?.role !== 'SafetyOfficer' && (
+          <button
+            onClick={handleExportCSV}
+            className="flex items-center gap-2 px-4 py-2 bg-white text-black text-sm font-medium rounded hover:bg-[#e5e2e1] transition-colors"
+          >
+            <Download size={16} /> Export CSV
+          </button>
+        )}
       </div>
 
       {/* KPI Cards */}

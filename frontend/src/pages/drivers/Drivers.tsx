@@ -4,6 +4,7 @@ import { getDrivers, updateDriver } from '../../services/drivers.ts';
 import type { Driver } from '../../types';
 import { LoadingBuffer } from '../../components/ui/Loading.tsx';
 import { DriverModal } from './DriverModal.tsx';
+import { useAuthStore } from '../../store/authStore';
 
 // Helper to determine expiry status
 const getExpiryStatus = (expiryDateStr: string) => {
@@ -20,6 +21,7 @@ const getExpiryStatus = (expiryDateStr: string) => {
 };
 
 export default function Drivers() {
+  const { user } = useAuthStore();
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -98,12 +100,14 @@ export default function Drivers() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h2 className="text-xl font-bold tracking-tight text-white font-sans">Driver Management</h2>
-        <button
-          onClick={() => { setEditingDriver(undefined); setIsModalOpen(true); }}
-          className="flex items-center gap-2 px-4 py-2 bg-white text-black text-sm font-medium rounded hover:bg-[#e5e2e1] transition-colors"
-        >
-          <Plus size={16} /> Add Driver
-        </button>
+        {(user?.role === 'FleetManager' || user?.role === 'SafetyOfficer') && (
+          <button
+            onClick={() => { setEditingDriver(undefined); setIsModalOpen(true); }}
+            className="flex items-center gap-2 px-4 py-2 bg-white text-black text-sm font-medium rounded hover:bg-[#e5e2e1] transition-colors"
+          >
+            <Plus size={16} /> Add Driver
+          </button>
+        )}
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 bg-[#0A0A0A] p-4 rounded-lg border border-[#1F1F1F]">
@@ -149,8 +153,8 @@ export default function Drivers() {
               <th className="p-4 cursor-pointer hover:text-white" onClick={() => handleSort('licenseCategory')}>Category</th>
               <th className="p-4 cursor-pointer hover:text-white" onClick={() => handleSort('licenseExpiryDate')}>Expiry Date</th>
               <th className="p-4 cursor-pointer hover:text-white" onClick={() => handleSort('safetyScore')}>Safety Score</th>
-              <th className="p-4">Status</th>
-              <th className="p-4 text-right">Actions</th>
+              <th className="p-4 cursor-pointer hover:text-white" onClick={() => handleSort('status')}>Status</th>
+              {(user?.role === 'FleetManager' || user?.role === 'SafetyOfficer') && <th className="p-4 text-right">Actions</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-[#1F1F1F]">
@@ -196,24 +200,26 @@ export default function Drivers() {
                       {driver.status}
                     </span>
                   </td>
-                  <td className="p-4 text-right space-x-2">
-                    <button 
-                      onClick={() => { setEditingDriver(driver); setIsModalOpen(true); }}
-                      className="p-1.5 text-[#8e9192] hover:text-white hover:bg-[#262626] rounded transition-colors"
-                      title="Edit"
-                    >
-                      <Edit2 size={16} />
-                    </button>
-                    {driver.status !== 'Suspended' && (
+                  {(user?.role === 'FleetManager' || user?.role === 'SafetyOfficer') && (
+                    <td className="p-4 text-right space-x-2">
                       <button 
-                        onClick={() => handleSuspend(driver)}
-                        className="p-1.5 text-[#8e9192] hover:text-[#ffb4ab] hover:bg-[#1f1111] rounded transition-colors"
-                        title="Suspend"
+                        onClick={() => { setEditingDriver(driver); setIsModalOpen(true); }}
+                        className="p-1.5 text-[#8e9192] hover:text-white hover:bg-[#262626] rounded transition-colors"
+                        title="Edit"
                       >
-                        <UserX size={16} />
+                        <Edit2 size={16} />
                       </button>
-                    )}
-                  </td>
+                      {driver.status !== 'Suspended' && (
+                        <button 
+                          onClick={() => handleSuspend(driver)}
+                          className="p-1.5 text-[#8e9192] hover:text-[#ffb4ab] hover:bg-[#1f1111] rounded transition-colors"
+                          title="Suspend"
+                        >
+                          <UserX size={16} />
+                        </button>
+                      )}
+                    </td>
+                  )}
                 </tr>
               );
             })}
