@@ -28,7 +28,7 @@ class MaintenanceService {
   }
 
   async getMaintenanceSummary(query) {
-    const pipeline = buildTimeSeriesPipeline(query, 'createdAt', {}, '$cost');
+    const pipeline = buildTimeSeriesPipeline(query, 'createdAt', {}, { $ifNull: ['$actualCost', '$estimatedCost'] });
     const results = await MaintenanceLog.aggregate(pipeline);
     const chartData = formatChartData(results, query.period || 'monthly');
 
@@ -41,7 +41,7 @@ class MaintenanceService {
           _id: null, 
           activeRepairs: { $sum: { $cond: [{ $eq: ['$status', 'ACTIVE'] }, 1, 0] } },
           completed: { $sum: { $cond: [{ $eq: ['$status', 'COMPLETED'] }, 1, 0] } },
-          totalCost: { $sum: '$cost' }
+          totalCost: { $sum: { $ifNull: ['$actualCost', '$estimatedCost'] } }
         } 
       }
     ]);

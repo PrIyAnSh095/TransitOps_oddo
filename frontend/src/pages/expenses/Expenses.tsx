@@ -196,7 +196,7 @@ export default function Expenses() {
                     </td>
                     <td className="p-4 font-mono">{new Date(log.date).toLocaleDateString()}</td>
                     <td className="p-4 font-mono">{log.liters.toFixed(1)} L</td>
-                    <td className="p-4 font-mono text-white">${log.cost.toFixed(2)}</td>
+                    <td className="p-4 font-mono text-white">₹{log.cost.toFixed(2)}</td>
                     <td className="p-4 text-[#5d5f5f]">{log.tripId || '-'}</td>
                   </tr>
                 );
@@ -231,7 +231,7 @@ export default function Expenses() {
                   <tr key={exp.id} className="hover:bg-[#131313] transition-colors">
                     <td className="p-4 text-white font-medium">{exp.type}</td>
                     <td className="p-4 font-mono">{new Date(exp.date).toLocaleDateString()}</td>
-                    <td className="p-4 font-mono text-white">${exp.amount.toFixed(2)}</td>
+                    <td className="p-4 font-mono text-white">₹{exp.amount.toFixed(2)}</td>
                     <td className="p-4 text-[#5d5f5f]">{vehicle ? vehicle.registrationNumber : '-'}</td>
                     <td className="p-4 text-[#5d5f5f]">{exp.tripId || '-'}</td>
                   </tr>
@@ -267,11 +267,11 @@ export default function Expenses() {
                     <span className="text-white font-medium">{row.vehicle.registrationNumber}</span>
                     <div className="text-xs text-[#5d5f5f]">{row.vehicle.name}</div>
                   </td>
-                  <td className="p-4 font-mono">${row.totalFuel.toFixed(2)}</td>
-                  <td className="p-4 font-mono">${row.totalMaintenance.toFixed(2)}</td>
-                  <td className="p-4 font-mono">${row.totalMisc.toFixed(2)}</td>
+                  <td className="p-4 font-mono">₹{row.totalFuel.toFixed(2)}</td>
+                  <td className="p-4 font-mono">₹{row.totalMaintenance.toFixed(2)}</td>
+                  <td className="p-4 font-mono">₹{row.totalMisc.toFixed(2)}</td>
                   <td className="p-4 font-mono text-[#48ddbc] font-bold">
-                    ${row.total.toFixed(2)}
+                    ₹{row.total.toFixed(2)}
                   </td>
                 </tr>
               ))}

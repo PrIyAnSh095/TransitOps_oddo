@@ -178,7 +178,7 @@ export function VehicleModal({ isOpen, onClose, onSaved, vehicle, existingVehicl
             </div>
 
             <div className="space-y-2 md:col-span-2">
-              <label className="text-xs font-semibold tracking-wider text-[#c4c7c8] uppercase">Acquisition Cost ($)</label>
+              <label className="text-xs font-semibold tracking-wider text-[#c4c7c8] uppercase">Acquisition Cost (₹)</label>
               <input
                 type="number"
                 {...register('acquisitionCost', { valueAsNumber: true })}

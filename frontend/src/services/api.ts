@@ -2,11 +2,7 @@ const BASE_URL = 'http://localhost:3000';
 const USE_MOCK = false;
 
 // Routes that have real backend endpoints implemented.
-<<<<<<< HEAD
-const REAL_API_PREFIXES = ['/api/auth', '/api/vehicles', '/api/drivers', '/api/trips', '/api/fuel-logs', '/api/expenses', '/api/users'];
-=======
-const REAL_API_PREFIXES = ['/api/auth', '/api/vehicles', '/api/drivers', '/api/trips', '/api/maintenance', '/api/expenses', '/api/fuel-logs', '/api/reports', '/api/dashboard'];
->>>>>>> 72b53240d571880b50c526323a2f1168717de5d2
+const REAL_API_PREFIXES = ['/api/auth', '/api/vehicles', '/api/drivers', '/api/trips', '/api/maintenance', '/api/expenses', '/api/fuel-logs', '/api/reports', '/api/dashboard', '/api/users'];
 
 // Simple fetch wrapper
 export async function apiCall<T>(url: string, options?: RequestInit): Promise<T> {

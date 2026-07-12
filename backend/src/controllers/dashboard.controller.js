@@ -5,6 +5,7 @@ const Driver = require('../models/Driver');
 const Expense = require('../models/Expense');
 const MaintenanceLog = require('../models/MaintananceLog');
 const FuelLog = require('../models/FuelLog');
+const { buildTimeSeriesPipeline, formatChartData } = require('../utils/analytics');
 
 const getManagerKPIs = asyncHandler(async (req, res) => {
   const totalVehicles = await Vehicle.countDocuments({ isActive: true });
@@ -23,7 +24,7 @@ const getManagerKPIs = asyncHandler(async (req, res) => {
   const monthlyRevenue = tripsResult[0] ? tripsResult[0].totalRevenue : 0;
   
   const expensesResult = await Expense.aggregate([{ $group: { _id: null, total: { $sum: '$amount' } } }]);
-  const maintenanceResult = await MaintenanceLog.aggregate([{ $group: { _id: null, total: { $sum: '$cost' } } }]);
+  const maintenanceResult = await MaintenanceLog.aggregate([{ $group: { _id: null, total: { $sum: { $ifNull: ['$actualCost', '$estimatedCost'] } } } }]);
   const monthlyOperationalCost = (expensesResult[0] ? expensesResult[0].total : 0) + (maintenanceResult[0] ? maintenanceResult[0].total : 0);
 
   res.json({
@@ -78,27 +79,26 @@ const getDriverStatus = asyncHandler(async (req, res) => {
 });
 
 const getTripsTrend = asyncHandler(async (req, res) => {
-  // Static mock for now to keep it simple, but normally this would group by day using $dayOfWeek or $dayOfMonth
+  const query = { ...req.query, period: req.query.period || 'monthly' };
+  const pipeline = buildTimeSeriesPipeline(query, 'dispatchTime');
+  const results = await Trip.aggregate(pipeline);
+  const data = formatChartData(results, query.period, { labelKey: 'name', valueKey: 'value', fromDate: query.fromDate, toDate: query.toDate });
+
   res.json({
     success: true,
-    data: [
-      { name: 'Mon', value: 12 }, { name: 'Tue', value: 15 }, 
-      { name: 'Wed', value: 18 }, { name: 'Thu', value: 14 },
-      { name: 'Fri', value: 22 }, { name: 'Sat', value: 25 }, 
-      { name: 'Sun', value: 10 }
-    ]
+    data
   });
 });
 
 const getFuelTrend = asyncHandler(async (req, res) => {
+  const query = { ...req.query, period: req.query.period || 'monthly' };
+  const pipeline = buildTimeSeriesPipeline(query, 'fuelDate', {}, '$cost');
+  const results = await FuelLog.aggregate(pipeline);
+  const data = formatChartData(results, query.period, { labelKey: 'name', valueKey: 'value', fromDate: query.fromDate, toDate: query.toDate });
+
   res.json({
     success: true,
-    data: [
-      { name: 'Mon', value: 450 }, { name: 'Tue', value: 520 }, 
-      { name: 'Wed', value: 480 }, { name: 'Thu', value: 550 },
-      { name: 'Fri', value: 610 }, { name: 'Sat', value: 720 }, 
-      { name: 'Sun', value: 300 }
-    ]
+    data
   });
 });
 
@@ -106,7 +106,7 @@ const getCostBreakdown = asyncHandler(async (req, res) => {
   const expensesResult = await Expense.aggregate([
     { $group: { _id: '$expenseType', total: { $sum: '$amount' } } }
   ]);
-  const maintenanceResult = await MaintenanceLog.aggregate([{ $group: { _id: null, total: { $sum: '$cost' } } }]);
+  const maintenanceResult = await MaintenanceLog.aggregate([{ $group: { _id: null, total: { $sum: { $ifNull: ['$actualCost', '$estimatedCost'] } } } }]);
 
   const data = expensesResult.map(e => ({
     name: e._id,

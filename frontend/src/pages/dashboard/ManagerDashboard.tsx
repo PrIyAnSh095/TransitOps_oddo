@@ -55,7 +55,7 @@ export function ManagerDashboard() {
   if (error) throw error;
   if (loading || !kpis) return <LoadingBuffer message="Loading Executive Dashboard..." />;
 
-  const formatCurrency = (val: number) => `$${(val / 1000).toFixed(1)}k`;
+  const formatCurrency = (val: number) => `₹${(val / 1000).toFixed(1)}k`;
 
   return (
     <div className="space-y-6">
@@ -172,7 +172,7 @@ export function ManagerDashboard() {
                 <Pie data={costBreakdown} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value" nameKey="name">
                   {costBreakdown.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
                 </Pie>
-                <Tooltip formatter={(val: any) => `$${val}`} contentStyle={{ backgroundColor: '#131313', border: '1px solid #262626', borderRadius: '4px' }} />
+                <Tooltip formatter={(val: any) => `₹${val}`} contentStyle={{ backgroundColor: '#131313', border: '1px solid #262626', borderRadius: '4px' }} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>

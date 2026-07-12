@@ -122,7 +122,7 @@ export function MaintenanceModal({ isOpen, onClose, onSaved }: Props) {
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold tracking-wider text-[#c4c7c8] uppercase">Cost ($)</label>
+                <label className="text-xs font-semibold tracking-wider text-[#c4c7c8] uppercase">Cost (₹)</label>
                 <input
                   type="number"
                   {...register('cost', { valueAsNumber: true })}

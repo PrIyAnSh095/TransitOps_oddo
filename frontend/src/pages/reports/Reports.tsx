@@ -47,7 +47,7 @@ export default function Reports() {
       '',
       `Fleet Utilization (%),${data.fleetUtilization.toFixed(1)}%`,
       `Overall Fuel Efficiency (km/L),${data.fuelEfficiency.toFixed(2)}`,
-      `Total Operational Cost ($),${data.operationalCost.toFixed(2)}`,
+      `Total Operational Cost (₹),${data.operationalCost.toFixed(2)}`,
       `Average Vehicle ROI (%),${data.vehicleROI.toFixed(2)}%`,
       '',
       headers.join(','),
@@ -115,7 +115,7 @@ export default function Reports() {
             <DollarSign size={20} className="text-[#ff6b6b]" />
             <h3 className="text-sm font-semibold uppercase tracking-wider">Operational Cost</h3>
           </div>
-          <div className="text-3xl font-mono text-white font-bold">${(data.operationalCost / 1000).toFixed(1)}k</div>
+          <div className="text-3xl font-mono text-white font-bold">₹{(data.operationalCost / 1000).toFixed(1)}k</div>
         </div>
 
         <div className="bg-[#0A0A0A] p-5 rounded-lg border border-[#1F1F1F] flex flex-col justify-between">
@@ -138,7 +138,7 @@ export default function Reports() {
               <LineChart data={data.revenueVsCost}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#1F1F1F" vertical={false} />
                 <XAxis dataKey="month" stroke="#5d5f5f" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="#5d5f5f" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `${val / 1000}k`} />
+                <YAxis stroke="#5d5f5f" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `₹${val / 1000}k`} />
                 <Tooltip cursor={{ fill: '#131313' }} contentStyle={{ backgroundColor: '#050505', border: '1px solid #1F1F1F', borderRadius: '4px' }} />
                 <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
                 <Line type="monotone" dataKey="revenue" name="Revenue" stroke="#48ddbc" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
@@ -172,7 +172,7 @@ export default function Reports() {
               <BarChart data={data.fuelCostByVehicleType}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#1F1F1F" vertical={false} />
                 <XAxis dataKey="type" stroke="#5d5f5f" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="#5d5f5f" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `${val}`} />
+                <YAxis stroke="#5d5f5f" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `₹${val}`} />
                 <Tooltip cursor={{ fill: '#131313' }} contentStyle={{ backgroundColor: '#050505', border: '1px solid #1F1F1F', borderRadius: '4px' }} />
                 <Bar dataKey="cost" fill="#ffc633" radius={[4, 4, 0, 0]} />
               </BarChart>
@@ -204,7 +204,7 @@ export default function Reports() {
               <LineChart data={data.maintenanceCostTrend}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#1F1F1F" vertical={false} />
                 <XAxis dataKey="month" stroke="#5d5f5f" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="#5d5f5f" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `${val}`} />
+                <YAxis stroke="#5d5f5f" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `₹${val}`} />
                 <Tooltip cursor={{ fill: '#131313' }} contentStyle={{ backgroundColor: '#050505', border: '1px solid #1F1F1F', borderRadius: '4px' }} />
                 <Line type="monotone" dataKey="cost" name="Cost" stroke="#ff6b6b" strokeWidth={3} dot={{ r: 4 }} />
               </LineChart>
@@ -259,7 +259,7 @@ export default function Reports() {
                     return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
                   })}
                 </Pie>
-                <Tooltip formatter={(val) => `${val}`} contentStyle={{ backgroundColor: '#050505', border: '1px solid #1F1F1F', borderRadius: '4px' }} />
+                <Tooltip formatter={(val) => `₹${val}`} contentStyle={{ backgroundColor: '#050505', border: '1px solid #1F1F1F', borderRadius: '4px' }} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>

@@ -199,7 +199,7 @@ export default function Maintenance() {
                     {new Date(log.date).toLocaleDateString()}
                   </td>
                   <td className="p-4 font-mono text-white">
-                    ${log.cost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    ₹{log.cost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
                   <td className="p-4">
                     <span className={`px-2 py-1 rounded text-[10px] font-bold tracking-wider uppercase border ${
