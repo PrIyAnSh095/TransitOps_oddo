@@ -1,7 +1,7 @@
 const BASE_URL = 'http://localhost:3000';
 
 // Routes that have real backend endpoints implemented.
-const REAL_API_PREFIXES = ['/api/auth', '/api/vehicles', '/api/drivers', '/api/trips'];
+const REAL_API_PREFIXES = ['/api/auth', '/api/vehicles', '/api/drivers', '/api/trips', '/api/fuel-logs', '/api/expenses'];
 
 // Simple fetch wrapper
 export async function apiCall<T>(url: string, options?: RequestInit): Promise<T> {

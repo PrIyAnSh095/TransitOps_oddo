@@ -11,6 +11,8 @@ const vehicleRoutes = require('./routes/vehicle.routes');
 const driverRoutes = require('./routes/driver.routes');
 const tripRoutes = require('./routes/trip.routes');
 const maintenanceRoutes = require('./routes/maintenance.routes');
+const fuelLogRoutes = require('./routes/fuelLog.routes');
+const expenseRoutes = require('./routes/expense.routes');
 
 const app = express();
 
@@ -38,6 +40,8 @@ app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/drivers', driverRoutes);
 app.use('/api/trips', tripRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
+app.use('/api/fuel-logs', fuelLogRoutes);
+app.use('/api/expenses', expenseRoutes);
 
 // Error Handling
 app.use(notFound);

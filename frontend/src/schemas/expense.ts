@@ -13,7 +13,7 @@ export type FuelLogCreateValues = z.infer<typeof fuelLogSchema>;
 export const expenseSchema = z.object({
   tripId: z.string().optional(),
   vehicleId: z.string().optional(),
-  type: z.enum(['Toll', 'Misc', 'Maintenance'], {
+  type: z.enum(['Toll', 'Misc', 'Maintenance', 'Parking', 'Insurance', 'Fine'], {
     message: 'Please select a valid expense type',
   }),
   amount: z.number().min(0.1, 'Must be greater than 0'),
