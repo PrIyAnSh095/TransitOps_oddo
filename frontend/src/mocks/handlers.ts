@@ -1,5 +1,5 @@
-import type { User, Vehicle, Driver, Trip } from '../types';
-import { mockVehicles, mockDrivers, mockTrips } from './data.ts';
+import type { User, Vehicle, Driver, Trip, MaintenanceLog } from '../types';
+import { mockVehicles, mockDrivers, mockTrips, mockMaintenanceLogs } from './data.ts';
 
 // Mock users for different roles
 const mockUsers: Record<string, User> = {
@@ -12,6 +12,7 @@ const mockUsers: Record<string, User> = {
 let vehicles = [...mockVehicles];
 let drivers = [...mockDrivers];
 let trips = [...mockTrips];
+let maintenanceLogs = [...mockMaintenanceLogs];
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -217,6 +218,46 @@ const handlers: Record<string, (body?: any, path?: string) => Promise<any>> = {
     }
 
     return trip;
+  },
+  'GET /maintenance': async () => {
+    await delay(500);
+    return maintenanceLogs;
+  },
+  'POST /maintenance': async (body: any) => {
+    await delay(500);
+    const newLog: MaintenanceLog = {
+      ...body,
+      id: `m${Date.now()}`,
+      status: 'Active',
+    };
+    maintenanceLogs.unshift(newLog);
+
+    // Flip vehicle to In Shop
+    const v = vehicles.find(v => v.id === newLog.vehicleId);
+    if (v && v.status !== 'Retired') {
+      v.status = 'In Shop';
+    }
+
+    return newLog;
+  },
+  'PUT /maintenance/:id/close': async (_body: any, path?: string) => {
+    await delay(500);
+    const id = path?.split('/')[2];
+    const index = maintenanceLogs.findIndex(m => m.id === id);
+    if (index === -1) throw new Error('Maintenance log not found');
+
+    const log = maintenanceLogs[index];
+    if (log.status !== 'Active') throw new Error('Only Active logs can be closed');
+
+    log.status = 'Completed';
+
+    // Flip vehicle to Available (unless retired)
+    const v = vehicles.find(v => v.id === log.vehicleId);
+    if (v && v.status !== 'Retired') {
+      v.status = 'Available';
+    }
+
+    return log;
   }
 };
 

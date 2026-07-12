@@ -12,7 +12,7 @@ const Dashboard = lazy(() => import('./pages/dashboard/Dashboard.tsx'));
 const Vehicles = lazy(() => import('./pages/vehicles/Vehicles.tsx'));
 const Drivers = lazy(() => import('./pages/drivers/Drivers.tsx'));
 const Trips = lazy(() => import('./pages/trips/Trips.tsx'));
-const Maintenance = () => <div className="p-4 text-white">Maintenance Page - Implement in Phase 6</div>;
+const Maintenance = lazy(() => import('./pages/maintenance/Maintenance.tsx'));
 const Expenses = () => <div className="p-4 text-white">Expenses Page - Implement in Phase 7</div>;
 const Reports = () => <div className="p-4 text-white">Reports Page - Implement in Phase 8</div>;
 const Settings = () => <div className="p-4 text-white">Settings Page - Implement in Phase 10</div>;
@@ -73,7 +73,11 @@ export default function App() {
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={['FleetManager', 'FinancialAnalyst']} />}>
-              <Route path="/maintenance" element={<Maintenance />} />
+              <Route path="/maintenance" element={
+                <Suspense fallback={<div className="p-8 text-white"><span className="animate-pulse">Loading maintenance...</span></div>}>
+                  <Maintenance />
+                </Suspense>
+              } />
               <Route path="/expenses" element={<Expenses />} />
             </Route>
 
