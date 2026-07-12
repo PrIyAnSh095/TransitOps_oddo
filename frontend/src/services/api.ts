@@ -2,9 +2,11 @@ export const USE_MOCK = true;
 
 // Simple fetch wrapper
 export async function apiCall<T>(url: string, options?: RequestInit): Promise<T> {
-  const isAuthRoute = url.startsWith('/api/auth');
+  const isImplementedRoute = url.startsWith('/api/auth') || 
+                             url.startsWith('/api/trips') || 
+                             url.startsWith('/api/maintenance');
 
-  if (USE_MOCK && !isAuthRoute) {
+  if (USE_MOCK && !isImplementedRoute) {
     const handlers = (await import('../mocks/handlers.ts')).default;
     const method = options?.method?.toUpperCase() || 'GET';
     const path = url.replace('/api', '');
@@ -56,5 +58,12 @@ export async function apiCall<T>(url: string, options?: RequestInit): Promise<T>
     return null as T;
   }
   
-  return response.json();
+  const responseData = await response.json();
+  
+  // Unwrap standard { success, message, data } backend format if it exists
+  if (responseData && typeof responseData === 'object' && 'success' in responseData && 'data' in responseData) {
+     return responseData.data as T;
+  }
+  
+  return responseData as T;
 }
