@@ -4,10 +4,18 @@ const REAL_API_PREFIXES = ['/api/auth', '/api/vehicles', '/api/drivers'];
 
 // Simple fetch wrapper
 export async function apiCall<T>(url: string, options?: RequestInit): Promise<T> {
+<<<<<<< HEAD
   const isRealRoute = REAL_API_PREFIXES.some((prefix) => url.startsWith(prefix));
 
   if (!isRealRoute) {
     // Use mock handler for unimplemented backend routes
+=======
+  const isImplementedRoute = url.startsWith('/api/auth') || 
+                             url.startsWith('/api/trips') || 
+                             url.startsWith('/api/maintenance');
+
+  if (USE_MOCK && !isImplementedRoute) {
+>>>>>>> 8e826d95e13e4f70b072cf9d9f922cf306378627
     const handlers = (await import('../mocks/handlers.ts')).default;
     const method = options?.method?.toUpperCase() || 'GET';
     const path = url.replace('/api', '');
@@ -59,5 +67,12 @@ export async function apiCall<T>(url: string, options?: RequestInit): Promise<T>
     return null as T;
   }
   
-  return response.json();
+  const responseData = await response.json();
+  
+  // Unwrap standard { success, message, data } backend format if it exists
+  if (responseData && typeof responseData === 'object' && 'success' in responseData && 'data' in responseData) {
+     return responseData.data as T;
+  }
+  
+  return responseData as T;
 }
