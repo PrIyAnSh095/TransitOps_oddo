@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Download, TrendingUp, Truck, Fuel, DollarSign, Activity } from 'lucide-react';
+import { Download, TrendingUp, Truck, Fuel, DollarSign, Activity, Printer } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { getAnalytics, type AnalyticsPayload } from '../../services/reports.ts';
 import { LoadingBuffer } from '../../components/ui/Loading.tsx';
@@ -75,12 +75,20 @@ export default function Reports() {
           <p className="text-sm text-[#8e9192]">Executive fleet performance overview</p>
         </div>
         {user?.role !== 'SafetyOfficer' && (
-          <button
-            onClick={handleExportCSV}
-            className="flex items-center gap-2 px-4 py-2 bg-white text-black text-sm font-medium rounded hover:bg-[#e5e2e1] transition-colors"
-          >
-            <Download size={16} /> Export CSV
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => window.print()}
+              className="flex items-center gap-2 px-4 py-2 bg-transparent border border-[#262626] text-white text-sm font-medium rounded hover:bg-[#131313] transition-colors"
+            >
+              <Printer size={16} /> Export PDF
+            </button>
+            <button
+              onClick={handleExportCSV}
+              className="flex items-center gap-2 px-4 py-2 bg-white text-black text-sm font-medium rounded hover:bg-[#e5e2e1] transition-colors"
+            >
+              <Download size={16} /> Export CSV
+            </button>
+          </div>
         )}
       </div>
 

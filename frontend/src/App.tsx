@@ -15,7 +15,7 @@ const Trips = lazy(() => import('./pages/trips/Trips.tsx'));
 const Maintenance = lazy(() => import('./pages/maintenance/Maintenance.tsx'));
 const Expenses = lazy(() => import('./pages/expenses/Expenses.tsx'));
 const Reports = lazy(() => import('./pages/reports/Reports.tsx'));
-const Settings = () => <div className="p-4 text-white">Settings Page - Implement in Phase 10</div>;
+const Settings = lazy(() => import('./pages/settings/Settings.tsx'));
 
 export default function App() {
   const { restoreSession, isLoading } = useAuthStore();
@@ -94,7 +94,11 @@ export default function App() {
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={['FleetManager']} />}>
-              <Route path="/settings" element={<Settings />} />
+              <Route path="/settings" element={
+                <Suspense fallback={<div className="p-8 text-white"><span className="animate-pulse">Loading settings...</span></div>}>
+                  <Settings />
+                </Suspense>
+              } />
             </Route>
 
           </Route>

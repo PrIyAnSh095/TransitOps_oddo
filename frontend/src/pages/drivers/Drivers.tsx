@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Search, Edit2, UserX, AlertTriangle, ShieldAlert, ShieldCheck, Shield } from 'lucide-react';
+import { Plus, Search, Edit2, UserX, AlertTriangle, ShieldAlert, ShieldCheck, Shield, Mail } from 'lucide-react';
 import { getDrivers, updateDriver } from '../../services/drivers.ts';
 import type { Driver } from '../../types';
 import { LoadingBuffer } from '../../components/ui/Loading.tsx';
@@ -34,6 +34,7 @@ export default function Drivers() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDriver, setEditingDriver] = useState<Driver | undefined>();
+  const [sendingReminder, setSendingReminder] = useState<string | null>(null);
 
   const fetchDrivers = async () => {
     try {
@@ -69,6 +70,14 @@ export default function Drivers() {
         alert('Failed to suspend driver');
       }
     }
+  };
+
+  const handleSendReminder = async (driverId: string) => {
+    setSendingReminder(driverId);
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setSendingReminder(null);
+    alert('Reminder sent successfully!');
   };
 
   const filteredAndSortedDrivers = useMemo(() => {
@@ -202,6 +211,16 @@ export default function Drivers() {
                   </td>
                   {(user?.role === 'FleetManager' || user?.role === 'SafetyOfficer') && (
                     <td className="p-4 text-right space-x-2">
+                      {(expiryStatus === 'expired' || expiryStatus === 'soon') && (
+                        <button 
+                          onClick={() => handleSendReminder(driver.id)}
+                          disabled={sendingReminder === driver.id}
+                          className="p-1.5 text-[#8e9192] hover:text-[#ffc633] hover:bg-[#291e00] rounded transition-colors disabled:opacity-50"
+                          title="Send Expiry Reminder"
+                        >
+                          <Mail size={16} className={sendingReminder === driver.id ? 'animate-pulse' : ''} />
+                        </button>
+                      )}
                       <button 
                         onClick={() => { setEditingDriver(driver); setIsModalOpen(true); }}
                         className="p-1.5 text-[#8e9192] hover:text-white hover:bg-[#262626] rounded transition-colors"

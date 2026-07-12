@@ -21,6 +21,7 @@ export interface Vehicle {
   name: string;               // e.g. "Van-05"
   type: string;                // "Van" | "Truck" | "Mini" | custom
   maxLoadCapacityKg: number;
+  documents?: { name: string, url: string }[];
   odometerKm: number;
   acquisitionCost: number;
   status: VehicleStatus;
