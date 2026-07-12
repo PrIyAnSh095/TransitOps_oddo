@@ -20,3 +20,17 @@ export async function logout(): Promise<void> {
 export async function me(): Promise<User> {
   return apiCall<User>('/api/auth/me');
 }
+
+export async function updateProfile(data: { name: string }): Promise<User> {
+  return apiCall<User>('/api/auth/profile', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function requestPasswordChange(currentPassword: string): Promise<{ message: string }> {
+  return apiCall<{ message: string }>('/api/auth/request-password-change', {
+    method: 'POST',
+    body: JSON.stringify({ currentPassword }),
+  });
+}

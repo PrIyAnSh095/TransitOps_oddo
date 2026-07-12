@@ -279,11 +279,90 @@ const getMe = asyncHandler(async (req, res) => {
   res.json(req.user);
 });
 
+// @desc    Update current user profile
+// @route   PUT /api/auth/profile
+// @access  Private
+const updateProfile = asyncHandler(async (req, res) => {
+  const { name } = req.body;
+
+  if (!name || !name.trim()) {
+    res.status(400);
+    throw new Error('Name is required');
+  }
+
+  const user = await User.findById(req.user._id);
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  user.name = name.trim();
+  await user.save();
+
+  res.json({
+    success: true,
+    message: 'Profile updated successfully',
+    data: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    },
+  });
+});
+
+// @desc    Request password change from Settings (verifies current password, sends reset email)
+// @route   POST /api/auth/request-password-change
+// @access  Private
+const requestPasswordChange = asyncHandler(async (req, res) => {
+  const { currentPassword } = req.body;
+
+  if (!currentPassword) {
+    res.status(400);
+    throw new Error('Please provide your current password');
+  }
+
+  // Fetch the full user doc (with hashed password) since protect strips it
+  const user = await User.findById(req.user._id);
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
+  const isMatch = await user.matchPassword(currentPassword);
+  if (!isMatch) {
+    res.status(401);
+    throw new Error('Current password is incorrect');
+  }
+
+  // Generate a password reset token exactly like forgot-password
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+  // Invalidate any existing unused tokens for this user
+  await PasswordResetToken.updateMany({ user: user._id, used: false }, { used: true });
+
+  await PasswordResetToken.create({
+    user: user._id,
+    token: resetTokenHash,
+    expiresAt: Date.now() + 30 * 60 * 1000, // 30 minutes
+  });
+
+  const resetUrl = `http://localhost:5173/auth/reset-password?token=${resetToken}`;
+  await sendPasswordResetEmail(user.email, resetUrl);
+
+  res.status(200).json({
+    message: `A password reset link has been sent to ${user.email}. Please check your inbox.`,
+  });
+});
+
 module.exports = {
   login,
   register,
   forgotPassword,
   resetPassword,
   googleOAuth,
-  getMe
+  getMe,
+  updateProfile,
+  requestPasswordChange,
 };

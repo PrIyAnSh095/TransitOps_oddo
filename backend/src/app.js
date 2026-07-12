@@ -13,6 +13,7 @@ const tripRoutes = require('./routes/trip.routes');
 const maintenanceRoutes = require('./routes/maintenance.routes');
 const fuelLogRoutes = require('./routes/fuelLog.routes');
 const expenseRoutes = require('./routes/expense.routes');
+const userRoutes = require('./routes/user.routes');
 
 const app = express();
 
@@ -42,6 +43,7 @@ app.use('/api/trips', tripRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/fuel-logs', fuelLogRoutes);
 app.use('/api/expenses', expenseRoutes);
+app.use('/api/users', userRoutes);
 
 // Error Handling
 app.use(notFound);

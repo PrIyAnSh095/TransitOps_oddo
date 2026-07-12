@@ -9,6 +9,7 @@ interface AuthState {
   login: (email: string, password: string, turnstileToken?: string) => Promise<void>;
   logout: () => void;
   restoreSession: () => Promise<void>;
+  updateUser: (data: { name: string }) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -38,5 +39,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       localStorage.removeItem('transitops_token');
       set({ user: null, token: null, isLoading: false });
     }
+  },
+  updateUser: async (data) => {
+    const updatedUser = await authService.updateProfile(data);
+    set((state) => ({ user: state.user ? { ...state.user, ...updatedUser } : updatedUser }));
   },
 }));

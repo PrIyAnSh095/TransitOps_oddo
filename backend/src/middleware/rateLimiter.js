@@ -31,10 +31,10 @@ const globalLimiter = rateLimit({
   }
 });
 
-// Auth routes rate limiter: 10 requests / 15 minutes
+// Auth routes rate limiter: strict in prod, relaxed in dev
 const authLimiter = rateLimit({
   windowMs: (parseInt(process.env.RATE_LIMIT_WINDOW_MINUTES) || 15) * 60 * 1000,
-  max: 10,
+  max: process.env.NODE_ENV === 'production' ? 10 : 1000, // no practical limit in dev
   standardHeaders: true,
   legacyHeaders: false,
   // store: getStore(), // Commented out redis
