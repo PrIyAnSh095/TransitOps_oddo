@@ -1,19 +1,13 @@
 import { useState } from 'react';
-import { User, Moon, Sun, Bell, Shield, Save } from 'lucide-react';
+import { User, UserPlus, Bell, Shield, Save } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 
 export default function Settings() {
   const { user } = useAuthStore();
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
-  const [activeTab, setActiveTab] = useState<'profile' | 'appearance' | 'notifications' | 'security'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'users' | 'notifications' | 'security'>('profile');
 
   const handleSave = () => {
-    if (activeTab === 'appearance' && theme === 'light') {
-      alert('Light Mode is currently a stub for v2! Reverting to Dark Mode.');
-      setTheme('dark');
-    } else {
-      alert('Settings saved successfully!');
-    }
+    alert('Settings saved successfully!');
   };
 
   return (
@@ -37,14 +31,14 @@ export default function Settings() {
             <User size={18} className={activeTab === 'profile' ? 'text-[#48ddbc]' : ''} /> Account Profile
           </button>
           <button 
-            onClick={() => setActiveTab('appearance')}
+            onClick={() => setActiveTab('users')}
             className={`flex items-center gap-3 px-4 py-3 rounded-lg border text-sm font-medium transition-colors ${
-              activeTab === 'appearance' 
+              activeTab === 'users' 
                 ? 'bg-[#131313] text-white border-[#1F1F1F]' 
                 : 'bg-transparent text-[#8e9192] border-transparent hover:text-white hover:bg-[#0A0A0A]'
             }`}
           >
-            <Moon size={18} className={activeTab === 'appearance' ? 'text-[#558ded]' : ''} /> Appearance
+            <UserPlus size={18} className={activeTab === 'users' ? 'text-[#558ded]' : ''} /> Add User
           </button>
           <button 
             onClick={() => setActiveTab('notifications')}
@@ -105,29 +99,55 @@ export default function Settings() {
             </div>
           )}
 
-          {activeTab === 'appearance' && (
+          {activeTab === 'users' && (
             <div className="bg-[#0A0A0A] border border-[#1F1F1F] rounded-lg p-6 space-y-6">
-              <h3 className="text-lg font-bold text-white border-b border-[#1F1F1F] pb-4">Appearance</h3>
+              <h3 className="text-lg font-bold text-white border-b border-[#1F1F1F] pb-4">Add New User</h3>
               
-              <div>
-                <label className="block text-xs font-semibold text-[#8e9192] uppercase tracking-wider mb-3">Theme Preference</label>
-                <div className="flex gap-4">
-                  <button
-                    onClick={() => setTheme('dark')}
-                    className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-colors ${theme === 'dark' ? 'border-[#48ddbc] bg-[#002019]' : 'border-[#1F1F1F] bg-[#131313] hover:border-[#404040]'}`}
-                  >
-                    <Moon size={24} className={theme === 'dark' ? 'text-[#48ddbc]' : 'text-[#5d5f5f]'} />
-                    <span className={`text-sm font-medium ${theme === 'dark' ? 'text-[#48ddbc]' : 'text-[#8e9192]'}`}>Dark Mode</span>
-                  </button>
-                  <button
-                    onClick={() => setTheme('light')}
-                    className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-colors ${theme === 'light' ? 'border-[#48ddbc] bg-[#002019]' : 'border-[#1F1F1F] bg-[#131313] hover:border-[#404040]'}`}
-                  >
-                    <Sun size={24} className={theme === 'light' ? 'text-[#48ddbc]' : 'text-[#5d5f5f]'} />
-                    <span className={`text-sm font-medium ${theme === 'light' ? 'text-[#48ddbc]' : 'text-[#8e9192]'}`}>Light Mode</span>
-                  </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-[#8e9192] uppercase tracking-wider mb-1">Full Name</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. John Doe"
+                    className="w-full bg-[#050505] border border-[#1F1F1F] rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-white"
+                  />
                 </div>
-                <p className="text-xs text-[#5d5f5f] mt-3">Light mode is currently in beta. True dark mode is recommended for optimal contrast.</p>
+                <div>
+                  <label className="block text-xs font-semibold text-[#8e9192] uppercase tracking-wider mb-1">Email Address</label>
+                  <input 
+                    type="email" 
+                    placeholder="john@transitops.com"
+                    className="w-full bg-[#050505] border border-[#1F1F1F] rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#8e9192] uppercase tracking-wider mb-1">Role</label>
+                  <select 
+                    className="w-full bg-[#050505] border border-[#1F1F1F] rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-white appearance-none"
+                  >
+                    <option value="FleetManager">Fleet Manager</option>
+                    <option value="Dispatcher">Dispatcher</option>
+                    <option value="SafetyOfficer">Safety Officer</option>
+                    <option value="FinancialAnalyst">Financial Analyst</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#8e9192] uppercase tracking-wider mb-1">Temporary Password</label>
+                  <input 
+                    type="password" 
+                    placeholder="••••••••"
+                    className="w-full bg-[#050505] border border-[#1F1F1F] rounded px-3 py-2 text-white text-sm focus:outline-none focus:border-white"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={() => alert('New user added successfully! (Demo Data)')}
+                  className="flex items-center gap-2 px-4 py-2 bg-white text-black text-sm font-medium rounded hover:bg-[#e5e2e1] transition-colors"
+                >
+                  <UserPlus size={16} /> Create User
+                </button>
               </div>
             </div>
           )}
@@ -199,14 +219,16 @@ export default function Settings() {
             </div>
           )}
 
-          <div className="flex justify-end">
-            <button
-              onClick={handleSave}
-              className="flex items-center gap-2 px-6 py-2 bg-white text-black text-sm font-medium rounded hover:bg-[#e5e2e1] transition-colors"
-            >
-              <Save size={16} /> Save Changes
-            </button>
-          </div>
+          {activeTab !== 'users' && (
+            <div className="flex justify-end">
+              <button
+                onClick={handleSave}
+                className="flex items-center gap-2 px-6 py-2 bg-white text-black text-sm font-medium rounded hover:bg-[#e5e2e1] transition-colors"
+              >
+                <Save size={16} /> Save Changes
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
