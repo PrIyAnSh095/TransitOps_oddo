@@ -1,5 +1,5 @@
-import type { User, Vehicle, Driver } from '../types';
-import { mockVehicles, mockDrivers } from './data.ts';
+import type { User, Vehicle, Driver, Trip } from '../types';
+import { mockVehicles, mockDrivers, mockTrips } from './data.ts';
 
 // Mock users for different roles
 const mockUsers: Record<string, User> = {
@@ -11,6 +11,7 @@ const mockUsers: Record<string, User> = {
 
 let vehicles = [...mockVehicles];
 let drivers = [...mockDrivers];
+let trips = [...mockTrips];
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -124,6 +125,98 @@ const handlers: Record<string, (body?: any, path?: string) => Promise<any>> = {
       updatedAt: new Date().toISOString(),
     };
     return drivers[index];
+  },
+  'GET /trips': async () => {
+    await delay(500);
+    return trips;
+  },
+  'POST /trips': async (body: any) => {
+    await delay(500);
+    const newTrip: Trip = {
+      ...body,
+      id: `t${Date.now()}`,
+      tripCode: `TR${Math.floor(1000 + Math.random() * 9000)}`,
+      status: 'Draft',
+      createdAt: new Date().toISOString(),
+    };
+    trips.unshift(newTrip);
+    return newTrip;
+  },
+  'PUT /trips/:id/dispatch': async (_body: any, path?: string) => {
+    await delay(500);
+    const id = path?.split('/')[2];
+    const index = trips.findIndex(t => t.id === id);
+    if (index === -1) throw new Error('Trip not found');
+
+    const trip = trips[index];
+    if (trip.status !== 'Draft') throw new Error('Only Draft trips can be dispatched');
+
+    // Mutate Trip
+    trip.status = 'Dispatched';
+    trip.dispatchedAt = new Date().toISOString();
+
+    // Mutate Vehicle & Driver
+    if (trip.vehicleId) {
+      const v = vehicles.find(v => v.id === trip.vehicleId);
+      if (v) v.status = 'On Trip';
+    }
+    if (trip.driverId) {
+      const d = drivers.find(d => d.id === trip.driverId);
+      if (d) d.status = 'On Trip';
+    }
+
+    return trip;
+  },
+  'PUT /trips/:id/complete': async (body: any, path?: string) => {
+    await delay(500);
+    const id = path?.split('/')[2];
+    const index = trips.findIndex(t => t.id === id);
+    if (index === -1) throw new Error('Trip not found');
+
+    const trip = trips[index];
+    if (trip.status !== 'Dispatched') throw new Error('Only Dispatched trips can be completed');
+
+    trip.status = 'Completed';
+    trip.completedAt = new Date().toISOString();
+    trip.actualDistanceKm = body.actualDistanceKm;
+    trip.fuelConsumedLiters = body.fuelConsumedLiters;
+
+    if (trip.vehicleId) {
+      const v = vehicles.find(v => v.id === trip.vehicleId);
+      if (v) {
+        v.status = 'Available';
+        if (trip.actualDistanceKm) v.odometerKm += trip.actualDistanceKm;
+      }
+    }
+    if (trip.driverId) {
+      const d = drivers.find(d => d.id === trip.driverId);
+      if (d) d.status = 'Available';
+    }
+
+    return trip;
+  },
+  'PUT /trips/:id/cancel': async (_body: any, path?: string) => {
+    await delay(500);
+    const id = path?.split('/')[2];
+    const index = trips.findIndex(t => t.id === id);
+    if (index === -1) throw new Error('Trip not found');
+
+    const trip = trips[index];
+    if (trip.status !== 'Dispatched') throw new Error('Only Dispatched trips can be cancelled');
+
+    trip.status = 'Cancelled';
+    trip.cancelledAt = new Date().toISOString();
+
+    if (trip.vehicleId) {
+      const v = vehicles.find(v => v.id === trip.vehicleId);
+      if (v) v.status = 'Available';
+    }
+    if (trip.driverId) {
+      const d = drivers.find(d => d.id === trip.driverId);
+      if (d) d.status = 'Available';
+    }
+
+    return trip;
   }
 };
 
