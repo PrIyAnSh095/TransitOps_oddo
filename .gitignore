@@ -1,0 +1,41 @@
+# Node / JS
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Build output
+dist/
+build/
+.next/
+out/
+
+# Python / Odoo Backend
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+venv/
+.venv/
+env/
+.env
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+*~
+
+# Misc
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+coverage/
+
+TransitOps_Implementation_Plan.md
