@@ -65,6 +65,13 @@ const driverSchema = new Schema(
       default: null,
     },
 
+    safetyScore: {
+      type: Number,
+      min: 0,
+      max: 100,
+      default: 100,
+    },
+
     isActive: {
       type: Boolean,
       default: true,

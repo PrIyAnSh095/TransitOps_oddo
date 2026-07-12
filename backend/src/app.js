@@ -7,6 +7,8 @@ const morgan = require('morgan');
 const { globalLimiter } = require('./middleware/rateLimiter');
 const { notFound, errorHandler } = require('./middleware/error');
 const authRoutes = require('./routes/auth.routes');
+const vehicleRoutes = require('./routes/vehicle.routes');
+const driverRoutes = require('./routes/driver.routes');
 
 const app = express();
 
@@ -30,6 +32,8 @@ app.use('/api', globalLimiter);
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/vehicles', vehicleRoutes);
+app.use('/api/drivers', driverRoutes);
 
 // Error Handling
 app.use(notFound);

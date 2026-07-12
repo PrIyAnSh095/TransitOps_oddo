@@ -1,5 +1,13 @@
 const mongoose = require("mongoose");
+const dns = require("dns");
 const User = require("../models/User"); // Import User model
+
+// Fix: Local router DNS (10.x.x.x) refuses SRV queries that Node.js/MongoDB driver needs.
+// Patch dns.promises.resolveSrv to use a Resolver pointed at Google DNS (8.8.8.8).
+const googleResolver = new dns.Resolver();
+googleResolver.setServers(["8.8.8.8", "8.8.4.4"]);
+dns.promises.resolveSrv = (hostname) => googleResolver.resolve(hostname, "SRV");
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
 const connectDB = async () => {
   try {

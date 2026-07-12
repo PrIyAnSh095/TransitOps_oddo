@@ -1,10 +1,13 @@
-export const USE_MOCK = true;
+// Routes that have real backend endpoints implemented.
+// Everything else falls through to the mock handler.
+const REAL_API_PREFIXES = ['/api/auth', '/api/vehicles', '/api/drivers'];
 
 // Simple fetch wrapper
 export async function apiCall<T>(url: string, options?: RequestInit): Promise<T> {
-  const isAuthRoute = url.startsWith('/api/auth');
+  const isRealRoute = REAL_API_PREFIXES.some((prefix) => url.startsWith(prefix));
 
-  if (USE_MOCK && !isAuthRoute) {
+  if (!isRealRoute) {
+    // Use mock handler for unimplemented backend routes
     const handlers = (await import('../mocks/handlers.ts')).default;
     const method = options?.method?.toUpperCase() || 'GET';
     const path = url.replace('/api', '');
