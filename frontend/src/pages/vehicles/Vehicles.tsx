@@ -4,8 +4,10 @@ import { getVehicles, updateVehicle } from '../../services/vehicles.ts';
 import type { Vehicle } from '../../types';
 import { LoadingBuffer } from '../../components/ui/Loading.tsx';
 import { VehicleModal } from './VehicleModal.tsx';
+import { useAuthStore } from '../../store/authStore';
 
 export default function Vehicles() {
+  const { user } = useAuthStore();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -77,6 +79,8 @@ export default function Vehicles() {
       });
   }, [vehicles, search, statusFilter, typeFilter, sortField, sortOrder]);
 
+  const canAddVehicle = user?.role === 'FleetManager';
+
   if (error) throw error;
   if (loading) return <LoadingBuffer message="Loading Registry..." />;
 
@@ -84,12 +88,14 @@ export default function Vehicles() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h2 className="text-xl font-bold tracking-tight text-white font-sans">Vehicle Registry</h2>
-        <button
-          onClick={() => { setEditingVehicle(undefined); setIsModalOpen(true); }}
-          className="flex items-center gap-2 px-4 py-2 bg-white text-black text-sm font-medium rounded hover:bg-[#e5e2e1] transition-colors"
-        >
-          <Plus size={16} /> Add Vehicle
-        </button>
+        {canAddVehicle && (
+          <button
+            onClick={() => { setEditingVehicle(undefined); setIsModalOpen(true); }}
+            className="flex items-center gap-2 px-4 py-2 bg-white text-black text-sm font-medium rounded hover:bg-[#e5e2e1] transition-colors"
+          >
+            <Plus size={16} /> Add Vehicle
+          </button>
+        )}
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 bg-[#0A0A0A] p-4 rounded-lg border border-[#1F1F1F]">
@@ -136,7 +142,7 @@ export default function Vehicles() {
               <th className="p-4 cursor-pointer hover:text-white" onClick={() => handleSort('maxLoadCapacityKg')}>Capacity</th>
               <th className="p-4 cursor-pointer hover:text-white" onClick={() => handleSort('odometerKm')}>Odometer</th>
               <th className="p-4">Status</th>
-              <th className="p-4 text-right">Actions</th>
+              {canAddVehicle && <th className="p-4 text-right">Actions</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-[#1F1F1F]">
@@ -157,24 +163,26 @@ export default function Vehicles() {
                     {vehicle.status}
                   </span>
                 </td>
-                <td className="p-4 text-right space-x-2">
-                  <button 
-                    onClick={() => { setEditingVehicle(vehicle); setIsModalOpen(true); }}
-                    className="p-1.5 text-[#8e9192] hover:text-white hover:bg-[#262626] rounded transition-colors"
-                    title="Edit"
-                  >
-                    <Edit2 size={16} />
-                  </button>
-                  {vehicle.status !== 'Retired' && (
+                {canAddVehicle && (
+                  <td className="p-4 text-right space-x-2">
                     <button 
-                      onClick={() => handleRetire(vehicle)}
-                      className="p-1.5 text-[#8e9192] hover:text-[#ffb4ab] hover:bg-[#1f1111] rounded transition-colors"
-                      title="Retire"
+                      onClick={() => { setEditingVehicle(vehicle); setIsModalOpen(true); }}
+                      className="p-1.5 text-[#8e9192] hover:text-white hover:bg-[#262626] rounded transition-colors"
+                      title="Edit"
                     >
-                      <Archive size={16} />
+                      <Edit2 size={16} />
                     </button>
-                  )}
-                </td>
+                    {vehicle.status !== 'Retired' && (
+                      <button 
+                        onClick={() => handleRetire(vehicle)}
+                        className="p-1.5 text-[#8e9192] hover:text-[#ffb4ab] hover:bg-[#1f1111] rounded transition-colors"
+                        title="Retire"
+                      >
+                        <Archive size={16} />
+                      </button>
+                    )}
+                  </td>
+                )}
               </tr>
             ))}
             {filteredAndSortedVehicles.length === 0 && (
