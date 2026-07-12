@@ -1,5 +1,5 @@
-import type { User, Vehicle, Driver, Trip, MaintenanceLog } from '../types';
-import { mockVehicles, mockDrivers, mockTrips, mockMaintenanceLogs } from './data.ts';
+import type { User, Vehicle, Driver, Trip, MaintenanceLog, FuelLog, Expense } from '../types';
+import { mockVehicles, mockDrivers, mockTrips, mockMaintenanceLogs, mockFuelLogs, mockExpenses } from './data.ts';
 
 // Mock users for different roles
 const mockUsers: Record<string, User> = {
@@ -13,6 +13,8 @@ let vehicles = [...mockVehicles];
 let drivers = [...mockDrivers];
 let trips = [...mockTrips];
 let maintenanceLogs = [...mockMaintenanceLogs];
+let fuelLogs = [...mockFuelLogs];
+let expenses = [...mockExpenses];
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -258,6 +260,32 @@ const handlers: Record<string, (body?: any, path?: string) => Promise<any>> = {
     }
 
     return log;
+  },
+  'GET /fuel-logs': async () => {
+    await delay(500);
+    return fuelLogs;
+  },
+  'POST /fuel-logs': async (body: any) => {
+    await delay(500);
+    const newLog: FuelLog = {
+      ...body,
+      id: `f${Date.now()}`,
+    };
+    fuelLogs.unshift(newLog);
+    return newLog;
+  },
+  'GET /expenses': async () => {
+    await delay(500);
+    return expenses;
+  },
+  'POST /expenses': async (body: any) => {
+    await delay(500);
+    const newExpense: Expense = {
+      ...body,
+      id: `e${Date.now()}`,
+    };
+    expenses.unshift(newExpense);
+    return newExpense;
   }
 };
 
