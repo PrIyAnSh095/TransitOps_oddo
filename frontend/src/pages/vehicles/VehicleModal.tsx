@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { X } from 'lucide-react';
+import { X, Upload, FileText } from 'lucide-react';
 import { vehicleSchema, type VehicleFormValues } from '../../schemas/vehicle';
 import type { Vehicle } from '../../types';
 import { createVehicle, updateVehicle } from '../../services/vehicles';
@@ -15,6 +15,8 @@ interface Props {
 }
 
 export function VehicleModal({ isOpen, onClose, onSaved, vehicle, existingVehicles }: Props) {
+  const [uploadedDocs, setUploadedDocs] = useState<{name: string, url: string}[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
   const {
     register,
     handleSubmit,
@@ -36,6 +38,7 @@ export function VehicleModal({ isOpen, onClose, onSaved, vehicle, existingVehicl
 
   useEffect(() => {
     if (isOpen) {
+      setUploadedDocs(vehicle?.documents || []);
       if (vehicle) {
         reset({
           registrationNumber: vehicle.registrationNumber,
@@ -75,11 +78,12 @@ export function VehicleModal({ isOpen, onClose, onSaved, vehicle, existingVehicl
     }
 
     try {
+      const payload = { ...data, documents: uploadedDocs };
       let savedVehicle: Vehicle;
       if (vehicle) {
-        savedVehicle = await updateVehicle(vehicle.id, data);
+        savedVehicle = await updateVehicle(vehicle.id, payload);
       } else {
-        savedVehicle = await createVehicle(data);
+        savedVehicle = await createVehicle(payload);
       }
       onSaved(savedVehicle);
       onClose();
@@ -181,6 +185,39 @@ export function VehicleModal({ isOpen, onClose, onSaved, vehicle, existingVehicl
                 className="w-full px-3 py-2 bg-[#050505] border border-[#1F1F1F] rounded text-white focus:outline-none focus:border-white text-sm font-mono"
               />
               {errors.acquisitionCost && <p className="text-[#ffb4ab] text-xs">{errors.acquisitionCost.message}</p>}
+            </div>
+
+            <div className="md:col-span-2 space-y-2 pt-4 border-t border-[#1F1F1F]">
+              <label className="text-xs font-semibold tracking-wider text-[#c4c7c8] uppercase">Vehicle Documents</label>
+              <div className="flex items-center gap-4">
+                <label className="flex items-center justify-center gap-2 px-4 py-2 bg-[#131313] border border-[#1F1F1F] text-white rounded cursor-pointer hover:bg-[#1a1a1a] transition-colors text-sm">
+                  <Upload size={16} /> Upload Document
+                  <input 
+                    type="file" 
+                    className="hidden" 
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        setIsUploading(true);
+                        const fileName = e.target.files[0].name;
+                        setTimeout(() => {
+                          setUploadedDocs(prev => [...prev, { name: fileName, url: '#' }]);
+                          setIsUploading(false);
+                        }, 800);
+                      }
+                    }} 
+                  />
+                </label>
+                {isUploading && <span className="text-sm text-[#8e9192] animate-pulse">Uploading...</span>}
+              </div>
+              {uploadedDocs.length > 0 && (
+                <div className="flex flex-col gap-2 mt-2">
+                  {uploadedDocs.map((doc, idx) => (
+                    <div key={idx} className="flex items-center gap-2 text-sm text-[#48ddbc] bg-[#002019] px-3 py-1.5 rounded w-fit">
+                      <FileText size={14} /> {doc.name}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
