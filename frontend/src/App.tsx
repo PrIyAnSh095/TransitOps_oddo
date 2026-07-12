@@ -10,7 +10,7 @@ import { NotFound } from './pages/NotFound';
 // Placeholder Pages
 const Dashboard = lazy(() => import('./pages/dashboard/Dashboard.tsx'));
 const Vehicles = lazy(() => import('./pages/vehicles/Vehicles.tsx'));
-const Drivers = () => <div className="p-4 text-white">Drivers Page - Implement in Phase 4</div>;
+const Drivers = lazy(() => import('./pages/drivers/Drivers.tsx'));
 const Trips = () => <div className="p-4 text-white">Trips Page - Implement in Phase 5</div>;
 const Maintenance = () => <div className="p-4 text-white">Maintenance Page - Implement in Phase 6</div>;
 const Expenses = () => <div className="p-4 text-white">Expenses Page - Implement in Phase 7</div>;
@@ -60,7 +60,11 @@ export default function App() {
             </Route>
             
             <Route element={<ProtectedRoute allowedRoles={['FleetManager', 'Dispatcher', 'SafetyOfficer']} />}>
-              <Route path="/drivers" element={<Drivers />} />
+              <Route path="/drivers" element={
+                <Suspense fallback={<div className="p-8 text-white"><span className="animate-pulse">Loading driver management...</span></div>}>
+                  <Drivers />
+                </Suspense>
+              } />
               <Route path="/trips" element={<Trips />} />
             </Route>
 

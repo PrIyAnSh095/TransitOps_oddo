@@ -1,5 +1,5 @@
-import type { User, Vehicle } from '../types';
-import { mockVehicles } from './data.ts';
+import type { User, Vehicle, Driver } from '../types';
+import { mockVehicles, mockDrivers } from './data.ts';
 
 // Mock users for different roles
 const mockUsers: Record<string, User> = {
@@ -10,6 +10,7 @@ const mockUsers: Record<string, User> = {
 };
 
 let vehicles = [...mockVehicles];
+let drivers = [...mockDrivers];
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -93,6 +94,36 @@ const handlers: Record<string, (body?: any, path?: string) => Promise<any>> = {
       updatedAt: new Date().toISOString(),
     };
     return vehicles[index];
+  },
+  'GET /drivers': async () => {
+    await delay(500);
+    return drivers;
+  },
+  'POST /drivers': async (body: any) => {
+    await delay(500);
+    const newDriver: Driver = {
+      ...body,
+      id: `d${Date.now()}`,
+      status: 'Available', // initial status
+      safetyScore: body.safetyScore || 100, // default
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    drivers.push(newDriver);
+    return newDriver;
+  },
+  'PUT /drivers/:id': async (body: any, path?: string) => {
+    await delay(500);
+    const id = path?.split('/').pop();
+    const index = drivers.findIndex(d => d.id === id);
+    if (index === -1) throw new Error('Driver not found');
+    
+    drivers[index] = {
+      ...drivers[index],
+      ...body,
+      updatedAt: new Date().toISOString(),
+    };
+    return drivers[index];
   }
 };
 
