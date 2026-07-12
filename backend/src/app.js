@@ -19,7 +19,7 @@ app.use(cors({
 app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(mongoSanitize());
+//app.use(mongoSanitize());
 
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
