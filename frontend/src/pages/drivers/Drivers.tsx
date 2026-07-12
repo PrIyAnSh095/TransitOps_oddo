@@ -1,0 +1,249 @@
+import { useState, useEffect, useMemo } from 'react';
+import { Plus, Search, Edit2, UserX, AlertTriangle, ShieldAlert, ShieldCheck, Shield } from 'lucide-react';
+import { getDrivers, updateDriver } from '../../services/drivers.ts';
+import type { Driver } from '../../types';
+import { LoadingBuffer } from '../../components/ui/Loading.tsx';
+import { DriverModal } from './DriverModal.tsx';
+
+// Helper to determine expiry status
+const getExpiryStatus = (expiryDateStr: string) => {
+  const expiry = new Date(expiryDateStr);
+  const now = new Date();
+  
+  // Calculate difference in days
+  const diffTime = expiry.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) return 'expired';
+  if (diffDays <= 30) return 'soon';
+  return 'valid';
+};
+
+export default function Drivers() {
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [categoryFilter, setCategoryFilter] = useState('All');
+  const [sortField, setSortField] = useState<keyof Driver>('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingDriver, setEditingDriver] = useState<Driver | undefined>();
+
+  const fetchDrivers = async () => {
+    try {
+      setLoading(true);
+      const data = await getDrivers();
+      setDrivers(data);
+    } catch (err: any) {
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDrivers();
+  }, []);
+
+  const handleSort = (field: keyof Driver) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const handleSuspend = async (driver: Driver) => {
+    if (window.confirm(`Are you sure you want to suspend driver ${driver.name}?`)) {
+      try {
+        const updated = await updateDriver(driver.id, { status: 'Suspended' });
+        setDrivers(prev => prev.map(d => d.id === updated.id ? updated : d));
+      } catch (err) {
+        alert('Failed to suspend driver');
+      }
+    }
+  };
+
+  const filteredAndSortedDrivers = useMemo(() => {
+    return drivers
+      .filter(d => {
+        const matchesSearch = d.name.toLowerCase().includes(search.toLowerCase()) || 
+                              d.licenseNumber.toLowerCase().includes(search.toLowerCase());
+        const matchesStatus = statusFilter === 'All' || d.status === statusFilter;
+        const matchesCategory = categoryFilter === 'All' || d.licenseCategory === categoryFilter;
+        return matchesSearch && matchesStatus && matchesCategory;
+      })
+      .sort((a, b) => {
+        let aVal = a[sortField];
+        let bVal = b[sortField];
+        if (typeof aVal === 'string' && typeof bVal === 'string') {
+          return sortOrder === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+        }
+        if (typeof aVal === 'number' && typeof bVal === 'number') {
+          return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
+        }
+        return 0;
+      });
+  }, [drivers, search, statusFilter, categoryFilter, sortField, sortOrder]);
+
+  if (error) throw error;
+  if (loading) return <LoadingBuffer message="Loading Driver Management..." />;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h2 className="text-xl font-bold tracking-tight text-white font-sans">Driver Management</h2>
+        <button
+          onClick={() => { setEditingDriver(undefined); setIsModalOpen(true); }}
+          className="flex items-center gap-2 px-4 py-2 bg-white text-black text-sm font-medium rounded hover:bg-[#e5e2e1] transition-colors"
+        >
+          <Plus size={16} /> Add Driver
+        </button>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-4 bg-[#0A0A0A] p-4 rounded-lg border border-[#1F1F1F]">
+        <div className="relative flex-1">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5d5f5f]" />
+          <input
+            type="text"
+            placeholder="Search by Name or License No..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 bg-[#050505] border border-[#1F1F1F] rounded text-white text-sm focus:outline-none focus:border-white"
+          />
+        </div>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="px-4 py-2 bg-[#050505] border border-[#1F1F1F] rounded text-white text-sm focus:outline-none focus:border-white"
+        >
+          <option value="All">All Statuses</option>
+          <option value="Available">Available</option>
+          <option value="On Trip">On Trip</option>
+          <option value="Off Duty">Off Duty</option>
+          <option value="Suspended">Suspended</option>
+        </select>
+        <select
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value)}
+          className="px-4 py-2 bg-[#050505] border border-[#1F1F1F] rounded text-white text-sm focus:outline-none focus:border-white"
+        >
+          <option value="All">All Categories</option>
+          <option value="LMV">LMV</option>
+          <option value="HMV">HMV</option>
+          <option value="MCWG">MCWG</option>
+        </select>
+      </div>
+
+      <div className="bg-[#0A0A0A] border border-[#1F1F1F] rounded-lg overflow-x-auto">
+        <table className="w-full text-left text-sm text-[#c4c7c8]">
+          <thead className="bg-[#131313] border-b border-[#1F1F1F] text-xs uppercase tracking-wider">
+            <tr>
+              <th className="p-4 cursor-pointer hover:text-white" onClick={() => handleSort('name')}>Name</th>
+              <th className="p-4 cursor-pointer hover:text-white" onClick={() => handleSort('licenseNumber')}>License No</th>
+              <th className="p-4 cursor-pointer hover:text-white" onClick={() => handleSort('licenseCategory')}>Category</th>
+              <th className="p-4 cursor-pointer hover:text-white" onClick={() => handleSort('licenseExpiryDate')}>Expiry Date</th>
+              <th className="p-4 cursor-pointer hover:text-white" onClick={() => handleSort('safetyScore')}>Safety Score</th>
+              <th className="p-4">Status</th>
+              <th className="p-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[#1F1F1F]">
+            {filteredAndSortedDrivers.map(driver => {
+              const expiryStatus = getExpiryStatus(driver.licenseExpiryDate);
+              const formattedDate = new Date(driver.licenseExpiryDate).toLocaleDateString();
+              
+              return (
+                <tr key={driver.id} className="hover:bg-[#131313] transition-colors">
+                  <td className="p-4 text-white font-medium">{driver.name}</td>
+                  <td className="p-4 font-mono text-white">{driver.licenseNumber}</td>
+                  <td className="p-4">{driver.licenseCategory}</td>
+                  <td className="p-4">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono">{formattedDate}</span>
+                      {expiryStatus === 'expired' && (
+                        <span className="flex items-center gap-1 text-[10px] font-bold text-[#ffb4ab] bg-[#1f1111] border border-[#4a1c1c] px-2 py-0.5 rounded tracking-wide uppercase">
+                          <ShieldAlert size={12} /> Expired
+                        </span>
+                      )}
+                      {expiryStatus === 'soon' && (
+                        <span className="flex items-center gap-1 text-[10px] font-bold text-[#ffc633] bg-[#291e00] border border-[#7a5900] px-2 py-0.5 rounded tracking-wide uppercase">
+                          <AlertTriangle size={12} /> Expiring Soon
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="p-4">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-white">{driver.safetyScore}</span>
+                      {driver.safetyScore >= 90 ? <ShieldCheck size={14} className="text-[#48ddbc]" /> :
+                       driver.safetyScore >= 70 ? <Shield size={14} className="text-[#ffc633]" /> :
+                       <ShieldAlert size={14} className="text-[#ffb4ab]" />}
+                    </div>
+                  </td>
+                  <td className="p-4">
+                    <span className={`px-2 py-1 rounded text-[10px] font-bold tracking-wider uppercase border ${
+                      driver.status === 'Available' ? 'bg-[#002019] text-[#48ddbc] border-[#005142]' :
+                      driver.status === 'On Trip' ? 'bg-[#00173b] text-[#558ded] border-[#00388d]' :
+                      driver.status === 'Off Duty' ? 'bg-[#262626] text-[#c4c7c8] border-[#404040]' :
+                      'bg-[#1f1111] text-[#ffb4ab] border-[#4a1c1c]'
+                    }`}>
+                      {driver.status}
+                    </span>
+                  </td>
+                  <td className="p-4 text-right space-x-2">
+                    <button 
+                      onClick={() => { setEditingDriver(driver); setIsModalOpen(true); }}
+                      className="p-1.5 text-[#8e9192] hover:text-white hover:bg-[#262626] rounded transition-colors"
+                      title="Edit"
+                    >
+                      <Edit2 size={16} />
+                    </button>
+                    {driver.status !== 'Suspended' && (
+                      <button 
+                        onClick={() => handleSuspend(driver)}
+                        className="p-1.5 text-[#8e9192] hover:text-[#ffb4ab] hover:bg-[#1f1111] rounded transition-colors"
+                        title="Suspend"
+                      >
+                        <UserX size={16} />
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+            {filteredAndSortedDrivers.length === 0 && (
+              <tr>
+                <td colSpan={7} className="p-8 text-center text-[#5d5f5f]">
+                  <AlertTriangle className="mx-auto mb-2 text-[#5d5f5f]" size={24} />
+                  No drivers found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <DriverModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        driver={editingDriver}
+        existingDrivers={drivers}
+        onSaved={(saved) => {
+          setDrivers(prev => {
+            const exists = prev.some(d => d.id === saved.id);
+            if (exists) {
+              return prev.map(d => d.id === saved.id ? saved : d);
+            }
+            return [...prev, saved];
+          });
+        }}
+      />
+    </div>
+  );
+}
