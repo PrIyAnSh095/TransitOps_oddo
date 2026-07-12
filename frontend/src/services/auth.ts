@@ -6,10 +6,10 @@ interface LoginResponse {
   user: User;
 }
 
-export async function login(email: string, password: string): Promise<LoginResponse> {
+export async function login(email: string, password: string, turnstileToken?: string): Promise<LoginResponse> {
   return apiCall<LoginResponse>('/api/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, turnstileToken }),
   });
 }
 

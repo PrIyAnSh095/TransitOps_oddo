@@ -1,16 +1,22 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema } from '../../schemas/auth';
 import type { LoginFormValues } from '../../schemas/auth';
 import { useAuthStore } from '../../store/authStore';
-import { KeyRound, Mail, AlertCircle, Terminal } from 'lucide-react';
+import { KeyRound, Mail, AlertCircle, Terminal, Lock } from 'lucide-react';
+import { Turnstile } from '@marsidev/react-turnstile';
+import { GoogleLogin } from '@react-oauth/google';
+import { apiCall } from '../../services/api';
 
 export function Login() {
   const navigate = useNavigate();
   const { login } = useAuthStore();
   const [error, setError] = useState<string | null>(null);
+  const [requireCaptcha, setRequireCaptcha] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | undefined>();
+  const [lockoutMsg, setLockoutMsg] = useState<string | null>(null);
   
   const {
     register,
@@ -23,10 +29,43 @@ export function Login() {
   const onSubmit = async (data: LoginFormValues) => {
     try {
       setError(null);
-      await login(data.email, data.password);
+      setLockoutMsg(null);
+      
+      if (requireCaptcha && !turnstileToken) {
+        setError('Please complete the CAPTCHA');
+        return;
+      }
+      
+      await login(data.email, data.password, turnstileToken);
       navigate('/dashboard', { replace: true });
     } catch (err: any) {
-      setError(err.message || 'Invalid credentials');
+      if (err.remainingTimeMinutes) {
+        setLockoutMsg(`Account locked due to too many failed attempts. Try again in ${err.remainingTimeMinutes} minutes.`);
+      } else if (err.requireCaptcha) {
+        setRequireCaptcha(true);
+        setError(err.message || 'Invalid credentials');
+      } else {
+        setError(err.message || 'Invalid credentials');
+      }
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    try {
+      setError(null);
+      const res = await apiCall<{ token: string; user: any }>('/api/auth/google', {
+        method: 'POST',
+        body: JSON.stringify({ credential: credentialResponse.credential }),
+      });
+      localStorage.setItem('transitops_token', res.token);
+      useAuthStore.setState({ user: res.user, token: res.token });
+      navigate('/dashboard', { replace: true });
+    } catch (err: any) {
+      if (err.code === 'GOOGLE_USER_NOT_FOUND') {
+        navigate('/auth/google-error');
+      } else {
+        setError(err.message || 'Google Auth Failed');
+      }
     }
   };
 
@@ -54,7 +93,14 @@ export function Login() {
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {error && (
+            {lockoutMsg && (
+              <div className="bg-[#1f1111] border border-[#4a1c1c] text-[#ffb4ab] px-4 py-3 rounded text-sm flex items-start gap-3">
+                <Lock className="w-5 h-5 shrink-0 mt-0.5" />
+                <p>{lockoutMsg}</p>
+              </div>
+            )}
+
+            {!lockoutMsg && error && (
               <div className="bg-[#1f1111] border border-[#4a1c1c] text-[#ffb4ab] px-4 py-3 rounded text-sm flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
                 <p>{error}</p>
@@ -71,7 +117,8 @@ export function Login() {
                   <input
                     {...register('email')}
                     type="email"
-                    className="block w-full pl-10 pr-3 py-2 bg-[#050505] border border-[#1F1F1F] rounded-md text-white placeholder-[#5d5f5f] focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition-colors text-sm font-mono"
+                    disabled={!!lockoutMsg}
+                    className="block w-full pl-10 pr-3 py-2 bg-[#050505] border border-[#1F1F1F] rounded-md text-white placeholder-[#5d5f5f] focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition-colors text-sm font-mono disabled:opacity-50"
                     placeholder="role@test.com"
                   />
                 </div>
@@ -83,7 +130,7 @@ export function Login() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-semibold tracking-wider text-[#c4c7c8] uppercase">Password</label>
-                  <a href="#" className="text-xs text-[#A3A3A3] hover:text-white transition-colors">Forgot password?</a>
+                  <Link to="/auth/forgot-password" className="text-xs text-[#A3A3A3] hover:text-white transition-colors">Forgot password?</Link>
                 </div>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#5d5f5f]">
@@ -92,7 +139,8 @@ export function Login() {
                   <input
                     {...register('password')}
                     type="password"
-                    className="block w-full pl-10 pr-3 py-2 bg-[#050505] border border-[#1F1F1F] rounded-md text-white placeholder-[#5d5f5f] focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition-colors text-sm font-mono"
+                    disabled={!!lockoutMsg}
+                    className="block w-full pl-10 pr-3 py-2 bg-[#050505] border border-[#1F1F1F] rounded-md text-white placeholder-[#5d5f5f] focus:outline-none focus:border-white focus:ring-1 focus:ring-white transition-colors text-sm font-mono disabled:opacity-50"
                     placeholder="••••••••"
                   />
                 </div>
@@ -100,22 +148,41 @@ export function Login() {
                   <p className="text-[#ffb4ab] text-xs mt-1">{errors.password.message}</p>
                 )}
               </div>
+              
+              {requireCaptcha && !lockoutMsg && (
+                <div className="flex justify-center my-4">
+                  <Turnstile 
+                    siteKey="1x00000000000000000000AA"
+                    onSuccess={(token) => setTurnstileToken(token)}
+                  />
+                </div>
+              )}
             </div>
 
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !!lockoutMsg}
               className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-black bg-white hover:bg-[#e5e2e1] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white focus:ring-offset-[#0A0A0A] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
               {isSubmitting ? 'Authenticating...' : 'Sign In'}
             </button>
           </form>
+
+          <div className="mt-6 flex items-center justify-center">
+            <span className="text-sm text-[#5d5f5f] bg-[#0A0A0A] px-2">Or continue with</span>
+          </div>
+
+          <div className="mt-4 flex justify-center w-full overflow-hidden rounded-md border border-[#262626]">
+             <GoogleLogin
+               onSuccess={handleGoogleSuccess}
+               onError={() => setError('Google Login Failed')}
+               theme="filled_black"
+               shape="rectangular"
+               text="continue_with"
+               width="100%"
+             />
+          </div>
         </div>
-        
-        <p className="text-center text-xs text-[#5d5f5f] mt-8 font-mono">
-          Demo Accounts: fleet@, dispatcher@, safety@, finance@<br/>
-          (Password: password)
-        </p>
       </div>
     </div>
   );

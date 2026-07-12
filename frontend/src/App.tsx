@@ -2,6 +2,9 @@ import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
 import { Login } from './pages/auth/Login';
+import { ForgotPassword } from './pages/auth/ForgotPassword';
+import { ResetPassword } from './pages/auth/ResetPassword';
+import { GoogleOAuthError } from './pages/auth/GoogleOAuthError';
 import { AppShell } from './layouts/AppShell';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
@@ -34,6 +37,9 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+        <Route path="/auth/reset-password" element={<ResetPassword />} />
+        <Route path="/auth/google-error" element={<GoogleOAuthError />} />
         
         {/* Protected Routes inside App Shell */}
         <Route element={<ProtectedRoute />}>

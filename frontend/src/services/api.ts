@@ -2,7 +2,9 @@ export const USE_MOCK = true;
 
 // Simple fetch wrapper
 export async function apiCall<T>(url: string, options?: RequestInit): Promise<T> {
-  if (USE_MOCK) {
+  const isAuthRoute = url.startsWith('/api/auth');
+
+  if (USE_MOCK && !isAuthRoute) {
     const handlers = (await import('../mocks/handlers.ts')).default;
     const method = options?.method?.toUpperCase() || 'GET';
     const path = url.replace('/api', '');
@@ -44,8 +46,9 @@ export async function apiCall<T>(url: string, options?: RequestInit): Promise<T>
 
   const response = await fetch(url, { ...options, headers });
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'API Error' }));
-    throw new Error(error.message || 'API Error');
+    const errorData = await response.json().catch(() => ({ message: 'API Error' }));
+    // Throw the entire object so callers can check errorData.requireCaptcha etc
+    throw errorData;
   }
   
   // Return null for 204 or empty responses, otherwise parse JSON
