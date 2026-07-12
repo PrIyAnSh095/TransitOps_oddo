@@ -1,5 +1,6 @@
 const asyncHandler = require('express-async-handler');
 const FuelLog = require('../models/FuelLog');
+const fuelLogService = require('../services/fuelLog.service');
 
 // @desc    Get all fuel logs
 // @route   GET /api/fuel-logs
@@ -19,6 +20,14 @@ const getFuelLogs = asyncHandler(async (req, res) => {
   }));
   
   res.json(formattedLogs);
+});
+
+// @desc    Get fuel log by id
+// @route   GET /api/fuel-logs/:id
+// @access  Private
+const getFuelLogById = asyncHandler(async (req, res) => {
+  const log = await fuelLogService.getFuelLogById(req.params.id);
+  res.json(log);
 });
 
 // @desc    Create new fuel log
@@ -50,5 +59,6 @@ const createFuelLog = asyncHandler(async (req, res) => {
 
 module.exports = {
   getFuelLogs,
+  getFuelLogById,
   createFuelLog
 };

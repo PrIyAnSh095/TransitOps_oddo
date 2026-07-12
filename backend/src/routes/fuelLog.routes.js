@@ -3,6 +3,7 @@ const router = express.Router();
 const { protect } = require('../middleware/auth');
 const {
   getFuelLogs,
+  getFuelLogById,
   createFuelLog
 } = require('../controllers/fuelLog.controller');
 
@@ -12,4 +13,6 @@ router.route('/')
   .get(getFuelLogs)
   .post(createFuelLog);
 
+router.route('/:id')
+  .get(getFuelLogById);
 module.exports = router;

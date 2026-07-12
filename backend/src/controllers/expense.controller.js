@@ -96,4 +96,14 @@ const createExpense = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { getExpenses, getExpenseSummary, createExpense };
+const getExpenseById = asyncHandler(async (req, res) => {
+  const expenseService = require('../services/expense.service');
+  const expense = await expenseService.getExpenseById(req.params.id);
+  res.status(200).json({
+    success: true,
+    message: 'Expense fetched successfully',
+    data: expense,
+  });
+});
+
+module.exports = { getExpenses, getExpenseSummary, createExpense, getExpenseById };

@@ -3,9 +3,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { X, AlertCircle } from 'lucide-react';
 import { fuelLogSchema, type FuelLogCreateValues } from '../../schemas/expense';
-import type { FuelLog, Vehicle } from '../../types';
+import type { FuelLog, Vehicle, Trip } from '../../types';
 import { createFuelLog } from '../../services/expenses';
 import { getVehicles } from '../../services/vehicles';
+import { getTrips } from '../../services/trips';
 
 interface Props {
   isOpen: boolean;
@@ -15,6 +16,7 @@ interface Props {
 
 export function FuelLogModal({ isOpen, onClose, onSaved }: Props) {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [trips, setTrips] = useState<Trip[]>([]);
   const [loadingAssets, setLoadingAssets] = useState(false);
 
   const {
@@ -27,7 +29,7 @@ export function FuelLogModal({ isOpen, onClose, onSaved }: Props) {
     resolver: zodResolver(fuelLogSchema),
     defaultValues: {
       vehicleId: '',
-      tripId: '', // Optional
+      tripId: '',
       liters: 0,
       cost: 0,
       date: new Date().toISOString().split('T')[0],
@@ -47,10 +49,12 @@ export function FuelLogModal({ isOpen, onClose, onSaved }: Props) {
       const fetchAssets = async () => {
         setLoadingAssets(true);
         try {
-          const vRes = await getVehicles();
+          const [vRes, tRes] = await Promise.all([getVehicles(), getTrips()]);
           setVehicles(vRes);
+          // Only show active trips (DRAFT or DISPATCHED)
+          setTrips(tRes.filter(t => t.status === 'Draft' || t.status === 'Dispatched'));
         } catch (err) {
-          console.error("Failed to load assets", err);
+          console.error('Failed to load assets', err);
         } finally {
           setLoadingAssets(false);
         }
@@ -63,6 +67,7 @@ export function FuelLogModal({ isOpen, onClose, onSaved }: Props) {
     try {
       const isoDate = new Date(data.date).toISOString();
       const payload = { ...data, date: isoDate };
+      // Remove empty optional tripId so backend doesn't try to cast empty string
       if (!payload.tripId) delete payload.tripId;
 
       const savedLog = await createFuelLog(payload);
@@ -93,9 +98,11 @@ export function FuelLogModal({ isOpen, onClose, onSaved }: Props) {
           )}
 
           {loadingAssets ? (
-            <div className="py-8 text-center text-[#5d5f5f] animate-pulse">Loading vehicles...</div>
+            <div className="py-8 text-center text-[#5d5f5f] animate-pulse">Loading data...</div>
           ) : (
             <div className="space-y-4">
+
+              {/* Vehicle dropdown */}
               <div className="space-y-2">
                 <label className="text-xs font-semibold tracking-wider text-[#c4c7c8] uppercase">Vehicle</label>
                 <select
@@ -104,21 +111,31 @@ export function FuelLogModal({ isOpen, onClose, onSaved }: Props) {
                 >
                   <option value="">Select a vehicle...</option>
                   {vehicles.map(v => (
-                    <option key={v.id} value={v.id}>{v.registrationNumber} - {v.name}</option>
+                    <option key={v.id} value={v.id}>{v.registrationNumber} — {v.name}</option>
                   ))}
                 </select>
                 {errors.vehicleId && <p className="text-[#ffb4ab] text-xs">{errors.vehicleId.message}</p>}
               </div>
 
+              {/* Trip dropdown (optional) — uses real MongoDB _id as value */}
               <div className="space-y-2">
-                <label className="text-xs font-semibold tracking-wider text-[#c4c7c8] uppercase">Trip ID (Optional)</label>
-                <input
+                <label className="text-xs font-semibold tracking-wider text-[#c4c7c8] uppercase">
+                  Trip <span className="text-[#5d5f5f] normal-case font-normal">(Optional)</span>
+                </label>
+                <select
                   {...register('tripId')}
-                  className="w-full px-3 py-2 bg-[#050505] border border-[#1F1F1F] rounded text-white placeholder-[#5d5f5f] focus:outline-none focus:border-white text-sm"
-                  placeholder="e.g. TR001"
-                />
+                  className="w-full px-3 py-2 bg-[#050505] border border-[#1F1F1F] rounded text-white focus:outline-none focus:border-white text-sm appearance-none"
+                >
+                  <option value="">None — not linked to a trip</option>
+                  {trips.map(t => (
+                    <option key={t.id} value={t.id}>
+                      {t.tripCode} · {t.source} → {t.destination}
+                    </option>
+                  ))}
+                </select>
               </div>
 
+              {/* Liters & Cost */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-xs font-semibold tracking-wider text-[#c4c7c8] uppercase">Liters</label>
@@ -132,7 +149,7 @@ export function FuelLogModal({ isOpen, onClose, onSaved }: Props) {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold tracking-wider text-[#c4c7c8] uppercase">Total Cost ($)</label>
+                  <label className="text-xs font-semibold tracking-wider text-[#c4c7c8] uppercase">Total Cost (₹)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -143,6 +160,7 @@ export function FuelLogModal({ isOpen, onClose, onSaved }: Props) {
                 </div>
               </div>
 
+              {/* Date */}
               <div className="space-y-2">
                 <label className="text-xs font-semibold tracking-wider text-[#c4c7c8] uppercase">Date</label>
                 <input
@@ -152,6 +170,7 @@ export function FuelLogModal({ isOpen, onClose, onSaved }: Props) {
                 />
                 {errors.date && <p className="text-[#ffb4ab] text-xs">{errors.date.message}</p>}
               </div>
+
             </div>
           )}
 
