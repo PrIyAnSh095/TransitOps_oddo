@@ -1,20 +1,24 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Plus, Search, Edit2, Archive, AlertTriangle } from 'lucide-react';
-import { getVehicles, updateVehicle } from '../../services/vehicles.ts';
+import { getVehicles, updateVehicle, getFleetSummary, type SummaryData } from '../../services/vehicles.ts';
 import type { Vehicle } from '../../types';
 import { LoadingBuffer } from '../../components/ui/Loading.tsx';
+import { SummaryCard } from '../../components/ui/SummaryCard.tsx';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { VehicleModal } from './VehicleModal.tsx';
 import { useAuthStore } from '../../store/authStore';
 
 export default function Vehicles() {
   const { user } = useAuthStore();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [summary, setSummary] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [typeFilter, setTypeFilter] = useState('All');
+  const [period, setPeriod] = useState('monthly');
   const [sortField, setSortField] = useState<keyof Vehicle>('registrationNumber');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
@@ -24,8 +28,10 @@ export default function Vehicles() {
   const fetchVehicles = async () => {
     try {
       setLoading(true);
-      const data = await getVehicles();
-      setVehicles(data);
+      const filters = { search, status: statusFilter, period };
+      const [vData, sData] = await Promise.all([getVehicles(filters), getFleetSummary(filters)]);
+      setVehicles(vData);
+      setSummary(sData);
     } catch (err: any) {
       setError(err);
     } finally {
@@ -35,7 +41,7 @@ export default function Vehicles() {
 
   useEffect(() => {
     fetchVehicles();
-  }, []);
+  }, [search, statusFilter, period]);
 
   const handleSort = (field: keyof Vehicle) => {
     if (sortField === field) {
@@ -58,13 +64,10 @@ export default function Vehicles() {
   };
 
   const filteredAndSortedVehicles = useMemo(() => {
-    return vehicles
+    return [...vehicles]
       .filter(v => {
-        const matchesSearch = v.registrationNumber.toLowerCase().includes(search.toLowerCase()) || 
-                              v.name.toLowerCase().includes(search.toLowerCase());
-        const matchesStatus = statusFilter === 'All' || v.status === statusFilter;
         const matchesType = typeFilter === 'All' || v.type === typeFilter;
-        return matchesSearch && matchesStatus && matchesType;
+        return matchesType;
       })
       .sort((a, b) => {
         let aVal = a[sortField];
@@ -77,12 +80,12 @@ export default function Vehicles() {
         }
         return 0;
       });
-  }, [vehicles, search, statusFilter, typeFilter, sortField, sortOrder]);
+  }, [vehicles, typeFilter, sortField, sortOrder]);
 
   const canAddVehicle = user?.role === 'FleetManager';
 
   if (error) throw error;
-  if (loading) return <LoadingBuffer message="Loading Registry..." />;
+  if (loading && !vehicles.length) return <LoadingBuffer message="Loading Registry..." />;
 
   return (
     <div className="space-y-6">
@@ -132,7 +135,56 @@ export default function Vehicles() {
         </select>
       </div>
 
-      <div className="bg-[#0A0A0A] border border-[#1F1F1F] rounded-lg overflow-x-auto">
+      {summary && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 relative">
+          {loading && (
+            <div className="absolute inset-0 bg-black/50 z-10 flex items-center justify-center rounded-lg backdrop-blur-sm">
+              <div className="w-8 h-8 border-4 border-[#48ddbc] border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          )}
+          <div className="bg-[#0A0A0A] border border-[#1F1F1F] rounded-lg p-5 lg:col-span-2">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-[#c4c7c8]">Fleet Activity</h3>
+              <select 
+                value={period} 
+                onChange={(e) => setPeriod(e.target.value)}
+                className="bg-[#131313] border border-[#262626] text-[#c4c7c8] text-xs px-2 py-1 rounded focus:outline-none"
+              >
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
+              </select>
+            </div>
+            <div className="h-[250px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={summary.chartData}>
+                  <defs>
+                    <linearGradient id="colorFleet" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#48ddbc" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#48ddbc" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1F1F1F" vertical={false} />
+                  <XAxis dataKey="name" stroke="#5d5f5f" tickLine={false} axisLine={false} fontSize={12} />
+                  <YAxis stroke="#5d5f5f" tickLine={false} axisLine={false} fontSize={12} />
+                  <Tooltip contentStyle={{ backgroundColor: '#131313', border: '1px solid #262626', borderRadius: '4px' }} />
+                  <Area type="monotone" dataKey="value" stroke="#48ddbc" strokeWidth={3} fillOpacity={1} fill="url(#colorFleet)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+          <div className="lg:col-span-1">
+            <SummaryCard title="Fleet Summary" stats={summary.stats.map(s => ({ label: s.label, value: s.value, color: s.color }))} />
+          </div>
+        </div>
+      )}
+
+      <div className="bg-[#0A0A0A] border border-[#1F1F1F] rounded-lg overflow-x-auto relative">
+        {loading && (
+          <div className="absolute inset-0 bg-black/50 z-10 flex items-center justify-center backdrop-blur-sm">
+            <div className="w-8 h-8 border-4 border-[#48ddbc] border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        )}
         <table className="w-full text-left text-sm text-[#c4c7c8]">
           <thead className="bg-[#131313] border-b border-[#1F1F1F] text-xs uppercase tracking-wider">
             <tr>
@@ -185,7 +237,7 @@ export default function Vehicles() {
                 )}
               </tr>
             ))}
-            {filteredAndSortedVehicles.length === 0 && (
+            {filteredAndSortedVehicles.length === 0 && !loading && (
               <tr>
                 <td colSpan={7} className="p-8 text-center text-[#5d5f5f]">
                   <AlertTriangle className="mx-auto mb-2 text-[#5d5f5f]" size={24} />

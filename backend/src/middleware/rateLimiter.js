@@ -22,7 +22,7 @@ const rateLimit = require("express-rate-limit");
 // Global rate limiter: 100 requests / 15 minutes
 const globalLimiter = rateLimit({
   windowMs: (parseInt(process.env.RATE_LIMIT_WINDOW_MINUTES) || 15) * 60 * 1000,
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
+  max: 10000,
   standardHeaders: true,
   legacyHeaders: false,
   // store: getStore(), // Commented out redis

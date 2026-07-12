@@ -13,12 +13,12 @@ import {
   Settings,
   LogOut,
   Search,
-  Bell,
   Terminal,
   Menu,
   ChevronLeft
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { NotificationDropdown } from '../components/ui/NotificationDropdown';
 
 type NavItem = {
   name: string;
@@ -160,10 +160,7 @@ export function AppShell() {
           </div>
           
           <div className="flex items-center gap-4">
-            <button className="relative p-2 text-[#c4c7c8] hover:text-white hover:bg-[#1c1b1b] rounded-full transition-colors">
-              <Bell size={20} />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-white rounded-full border-2 border-[#131313]" />
-            </button>
+            <NotificationDropdown />
             <div className="hidden sm:block text-xs font-mono px-2 py-1 bg-[#1c1b1b] border border-[#2a2a2a] text-[#c4c7c8] rounded">
               {user.role}
             </div>

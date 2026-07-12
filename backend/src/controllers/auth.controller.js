@@ -36,9 +36,9 @@ const login = asyncHandler(async (req, res) => {
   // Check lockout
   if (user.isLocked()) {
     const remainingTime = Math.ceil((user.lockoutUntil - new Date()) / 60000);
-    res.status(423).json({ 
+    res.status(423).json({
       message: 'Account locked due to too many failed attempts.',
-      remainingTimeMinutes: remainingTime 
+      remainingTimeMinutes: remainingTime
     });
     return;
   }
@@ -77,15 +77,15 @@ const login = asyncHandler(async (req, res) => {
   } else {
     // Increment failed attempts
     user.failedLoginAttempts += 1;
-    
+
     if (user.failedLoginAttempts >= loginMaxAttempts) {
       user.lockoutUntil = new Date(Date.now() + (parseInt(process.env.LOCKOUT_DURATION_MINUTES) || 15) * 60000);
     }
-    
+
     await user.save();
 
     if (user.isLocked()) {
-      res.status(423).json({ 
+      res.status(423).json({
         message: 'Account locked due to too many failed attempts.',
         remainingTimeMinutes: parseInt(process.env.LOCKOUT_DURATION_MINUTES) || 15
       });
@@ -148,10 +148,10 @@ const forgotPassword = asyncHandler(async (req, res) => {
   }
 
   const user = await User.findOne({ email });
-  
+
   // Security best practice: Never reveal if the email exists or not unless policy says otherwise.
   // The specs say: "Never reveal whether an email exists unless your application's security policy explicitly allows it."
-  
+
   if (user) {
     // Generate reset token
     const resetToken = crypto.randomBytes(32).toString('hex');
@@ -167,7 +167,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
     });
 
     const resetUrl = `http://localhost:5173/auth/reset-password?token=${resetToken}`;
-    
+
     await sendPasswordResetEmail(user.email, resetUrl);
   }
 
@@ -200,11 +200,11 @@ const resetPassword = asyncHandler(async (req, res) => {
 
   const user = resetRecord.user;
   user.password = newPassword;
-  
+
   // Reset lockout
   user.failedLoginAttempts = 0;
   user.lockoutUntil = null;
-  
+
   await user.save();
 
   // Invalidate token
@@ -219,7 +219,7 @@ const resetPassword = asyncHandler(async (req, res) => {
 // @access  Public
 const googleOAuth = asyncHandler(async (req, res) => {
   const { credential } = req.body;
-  
+
   if (!credential) {
     res.status(400);
     throw new Error('Missing Google credential');

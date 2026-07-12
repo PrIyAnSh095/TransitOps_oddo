@@ -53,12 +53,73 @@ function mapTypeToDb(type) {
   return map[type] || type.toUpperCase();
 }
 
+const { buildTimeSeriesPipeline, formatChartData } = require('../utils/analytics');
+
 // @desc  Get all vehicles
 // @route GET /api/vehicles
 // @access Private
 const getVehicles = asyncHandler(async (req, res) => {
-  const vehicles = await Vehicle.find({ isActive: true }).sort({ createdAt: -1 });
-  res.json(vehicles.map(toClientVehicle));
+  const { status, search, fromDate, toDate } = req.query;
+  const match = { isActive: true };
+
+  if (status && status !== 'All') {
+    match.status = mapStatusToDb(status);
+  }
+
+  if (fromDate || toDate) {
+    match.createdAt = {};
+    if (fromDate) match.createdAt.$gte = new Date(fromDate);
+    if (toDate) match.createdAt.$lte = new Date(toDate);
+  }
+
+  if (search) {
+    match.$or = [
+      { registrationNumber: { $regex: search, $options: 'i' } },
+      { vehicleName: { $regex: search, $options: 'i' } }
+    ];
+  }
+
+  const vehicles = await Vehicle.find(match).sort({ createdAt: -1 });
+  res.json({
+    success: true,
+    data: vehicles.map(toClientVehicle)
+  });
+});
+
+const getVehicleSummary = asyncHandler(async (req, res) => {
+  const pipeline = buildTimeSeriesPipeline(req.query, 'createdAt');
+  const results = await Vehicle.aggregate(pipeline);
+  const chartData = formatChartData(results, req.query.period || 'monthly');
+
+  // Overall Stats
+  const match = pipeline[0].$match;
+  const statsResult = await Vehicle.aggregate([
+    { $match: match },
+    {
+      $group: {
+        _id: null,
+        total: { $sum: 1 },
+        available: { $sum: { $cond: [{ $eq: ['$status', 'AVAILABLE'] }, 1, 0] } },
+        inShop: { $sum: { $cond: [{ $eq: ['$status', 'IN_SHOP'] }, 1, 0] } }
+      }
+    }
+  ]);
+
+  const stats = statsResult[0] || { total: 0, available: 0, inShop: 0 };
+  const utilization = stats.total > 0 ? ((stats.total - stats.inShop) / stats.total) * 100 : 0;
+
+  res.json({
+    success: true,
+    data: {
+      chartData,
+      stats: [
+        { label: 'Total Fleet', value: stats.total },
+        { label: 'Available', value: stats.available, color: '#48ddbc' },
+        { label: 'In Shop', value: stats.inShop, color: '#ff6b6b' },
+        { label: 'Utilization', value: `${utilization.toFixed(1)}%` }
+      ]
+    }
+  });
 });
 
 // @desc  Create a vehicle
@@ -159,4 +220,4 @@ const deleteVehicle = asyncHandler(async (req, res) => {
   res.status(204).send();
 });
 
-module.exports = { getVehicles, createVehicle, updateVehicle, deleteVehicle };
+module.exports = { getVehicles, getVehicleSummary, createVehicle, updateVehicle, deleteVehicle };

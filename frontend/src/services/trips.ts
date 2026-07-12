@@ -22,8 +22,9 @@ function normalizeTrip(raw: any): Trip {
   };
 }
 
-export async function getTrips(): Promise<Trip[]> {
-  const raw = await apiCall<any[]>('/api/trips');
+export async function getTrips(filters?: Record<string, string>): Promise<Trip[]> {
+  const query = filters ? '?' + new URLSearchParams(filters).toString() : '';
+  const raw = await apiCall<any[]>(`/api/trips${query}`);
   return raw.map(normalizeTrip);
 }
 
@@ -61,4 +62,11 @@ export async function completeTrip(id: string, data: {
 export async function cancelTrip(id: string): Promise<Trip> {
   const raw = await apiCall<any>(`/api/trips/${id}/cancel`, { method: 'PUT' });
   return normalizeTrip(raw);
+}
+
+import type { SummaryData } from './vehicles.ts';
+
+export async function getTripsSummary(filters?: Record<string, string>): Promise<SummaryData> {
+  const query = filters ? '?' + new URLSearchParams(filters).toString() : '';
+  return apiCall<SummaryData>(`/api/trips/summary${query}`);
 }

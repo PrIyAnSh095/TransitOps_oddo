@@ -40,33 +40,128 @@ const handlers: Record<string, (body?: any, path?: string) => Promise<any>> = {
     return user;
   },
   'GET /dashboard/kpis': async () => {
-    await delay(800); // Trigger buffer
+    await delay(300);
     return {
-      activeVehicles: 4,
-      totalVehicles: 5,
-      activeTrips: 2,
-      totalDrivers: 5,
-      alerts: 1, // vehicle in shop
-      trendData: [
-        { name: 'Mon', cost: 400 },
-        { name: 'Tue', cost: 300 },
-        { name: 'Wed', cost: 550 },
-        { name: 'Thu', cost: 450 },
-        { name: 'Fri', cost: 700 },
-        { name: 'Sat', cost: 200 },
-        { name: 'Sun', cost: 100 },
-      ]
+      totalVehicles: 24,
+      availableVehicles: 15,
+      activeTrips: 8,
+      driversOnDuty: 12,
+      vehiclesInMaintenance: 4,
+      fleetUtilization: 75.5,
+      monthlyRevenue: 125400,
+      monthlyOperationalCost: 48200
     };
   },
-  'GET /dashboard/dispatcher': async () => {
-    await delay(800); // Trigger buffer
+  'GET /dashboard/fleet-status': async () => {
+    await delay(300);
+    return [
+      { name: 'Available', value: 15, color: '#48ddbc' },
+      { name: 'On Trip', value: 5, color: '#558ded' },
+      { name: 'In Shop', value: 4, color: '#ff6b6b' },
+    ];
+  },
+  'GET /dashboard/driver-status': async () => {
+    await delay(300);
+    return [
+      { name: 'Available', value: 8, color: '#48ddbc' },
+      { name: 'On Duty', value: 12, color: '#558ded' },
+      { name: 'Off Duty', value: 5, color: '#8e9192' },
+    ];
+  },
+  'GET /dashboard/trips-trend': async () => {
+    await delay(300);
+    return [
+      { name: 'Mon', value: 12 }, { name: 'Tue', value: 15 }, 
+      { name: 'Wed', value: 18 }, { name: 'Thu', value: 14 },
+      { name: 'Fri', value: 22 }, { name: 'Sat', value: 25 }, 
+      { name: 'Sun', value: 10 }
+    ];
+  },
+  'GET /dashboard/fuel-trend': async () => {
+    await delay(300);
+    return [
+      { name: 'Mon', value: 450 }, { name: 'Tue', value: 520 }, 
+      { name: 'Wed', value: 480 }, { name: 'Thu', value: 550 },
+      { name: 'Fri', value: 610 }, { name: 'Sat', value: 720 }, 
+      { name: 'Sun', value: 300 }
+    ];
+  },
+  'GET /dashboard/cost-breakdown': async () => {
+    await delay(300);
+    return [
+      { name: 'Fuel', value: 45000, color: '#558ded' },
+      { name: 'Maintenance', value: 28000, color: '#ff6b6b' },
+      { name: 'Tolls', value: 8500, color: '#ffc633' },
+      { name: 'Insurance', value: 12000, color: '#48ddbc' },
+    ];
+  },
+  'GET /dashboard/recent-activity': async () => {
+    await delay(300);
+    return [
+      { id: '1', type: 'Trip Created', description: 'Trip TR4829 created for VAN-002', timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString() },
+      { id: '2', type: 'Fuel Added', description: '45L Diesel logged for TRK-001', timestamp: new Date(Date.now() - 1000 * 60 * 45).toISOString() },
+      { id: '3', type: 'Maintenance Completed', description: 'Oil change completed on BUS-010', timestamp: new Date(Date.now() - 1000 * 60 * 120).toISOString() },
+      { id: '4', type: 'Trip Completed', description: 'TR4810 completed by Driver Alice', timestamp: new Date(Date.now() - 1000 * 60 * 200).toISOString() },
+    ];
+  },
+  'GET /dashboard/alerts': async () => {
+    await delay(300);
+    return [
+      { id: '1', type: 'License Expiry', message: 'John Doe license expires in 3 days', severity: 'high' },
+      { id: '2', type: 'Maintenance Due', message: 'TRK-005 due for routine service', severity: 'medium' },
+      { id: '3', type: 'Delayed Trips', message: 'TR4820 is running 45m behind schedule', severity: 'medium' },
+    ];
+  },
+  'GET /dashboard/available-vehicles': async () => {
+    await delay(300);
+    return [
+      { id: 'v1', registrationNumber: 'TRK-001', capacity: 15000, region: 'North', status: 'Available' },
+      { id: 'v2', registrationNumber: 'VAN-002', capacity: 2500, region: 'South', status: 'Available' },
+    ];
+  },
+  'GET /dashboard/available-drivers': async () => {
+    await delay(300);
+    return [
+      { id: 'd1', name: 'Alice Smith', status: 'Available' },
+      { id: 'd3', name: 'Charlie Brown', status: 'Available' },
+    ];
+  },
+  'GET /dashboard/active-trips': async () => {
+    await delay(300);
+    return trips.filter(t => t.status === 'Dispatched').map(t => ({
+      id: t.id,
+      code: t.tripCode || 'TR000',
+      status: t.status,
+      vehicle: vehicles.find(v => v.id === t.vehicleId)?.registrationNumber || 'Unknown',
+      driver: drivers.find(d => d.id === t.driverId)?.name || 'Unknown',
+      destination: t.destination
+    }));
+  },
+  'GET /dashboard/dispatch-suggestions': async () => {
+    await delay(300);
+    return [
+      { id: 's1', tripCode: 'TR5001', recommendedVehicleId: 'v1', recommendedDriverId: 'd1', reason: 'Best matching capacity and region' },
+    ];
+  },
+  'GET /dashboard/recent-dispatch-activity': async () => {
+    await delay(300);
+    return [
+      { id: '1', type: 'Trip Created', description: 'Dispatched TR4829 to North Region', timestamp: new Date().toISOString() },
+    ];
+  },
+  'GET /vehicles/summary': async () => {
+    await delay(300);
     return {
-      activeTrips: [
-        { id: 't2', code: 'TR002', status: 'Dispatched', vehicle: 'Van-01', driver: 'Alice Smith', destination: 'Store 2' }
+      chartData: [
+        { name: 'Mon', value: 20 }, { name: 'Tue', value: 21 },
+        { name: 'Wed', value: 22 }, { name: 'Thu', value: 21 },
+        { name: 'Fri', value: 23 }, { name: 'Sat', value: 24 }, { name: 'Sun', value: 24 }
       ],
-      availableDrivers: [
-        { id: 'd1', name: 'Alice Smith', status: 'Available' },
-        { id: 'd3', name: 'Charlie Brown', status: 'Available' }
+      stats: [
+        { label: 'Total Fleet', value: 24 },
+        { label: 'Available', value: 15, color: '#48ddbc' },
+        { label: 'In Shop', value: 4, color: '#ff6b6b' },
+        { label: 'Utilization', value: '75.5%' }
       ]
     };
   },
@@ -99,6 +194,22 @@ const handlers: Record<string, (body?: any, path?: string) => Promise<any>> = {
     };
     return vehicles[index];
   },
+  'GET /drivers/summary': async () => {
+    await delay(300);
+    return {
+      chartData: [
+        { name: 'Mon', value: 12 }, { name: 'Tue', value: 14 },
+        { name: 'Wed', value: 13 }, { name: 'Thu', value: 15 },
+        { name: 'Fri', value: 18 }, { name: 'Sat', value: 12 }, { name: 'Sun', value: 10 }
+      ],
+      stats: [
+        { label: 'Total Drivers', value: 35 },
+        { label: 'On Duty', value: 18, color: '#558ded' },
+        { label: 'Available', value: 10, color: '#48ddbc' },
+        { label: 'Avg Safety Score', value: '92%' }
+      ]
+    };
+  },
   'GET /drivers': async () => {
     await delay(500);
     return drivers;
@@ -128,6 +239,22 @@ const handlers: Record<string, (body?: any, path?: string) => Promise<any>> = {
       updatedAt: new Date().toISOString(),
     };
     return drivers[index];
+  },
+  'GET /trips/summary': async () => {
+    await delay(300);
+    return {
+      chartData: [
+        { name: 'Mon', value: 120 }, { name: 'Tue', value: 145 },
+        { name: 'Wed', value: 130 }, { name: 'Thu', value: 155 },
+        { name: 'Fri', value: 180 }, { name: 'Sat', value: 200 }, { name: 'Sun', value: 110 }
+      ],
+      stats: [
+        { label: 'Total Trips', value: 1040 },
+        { label: 'Completed', value: 850, color: '#48ddbc' },
+        { label: 'Delayed', value: 15, color: '#ffc633' },
+        { label: 'Avg Distance', value: '385 km' }
+      ]
+    };
   },
   'GET /trips': async () => {
     await delay(500);
@@ -221,6 +348,22 @@ const handlers: Record<string, (body?: any, path?: string) => Promise<any>> = {
 
     return trip;
   },
+  'GET /maintenance/summary': async () => {
+    await delay(300);
+    return {
+      chartData: [
+        { name: 'Mon', value: 500 }, { name: 'Tue', value: 800 },
+        { name: 'Wed', value: 450 }, { name: 'Thu', value: 900 },
+        { name: 'Fri', value: 650 }, { name: 'Sat', value: 200 }, { name: 'Sun', value: 100 }
+      ],
+      stats: [
+        { label: 'Active Repairs', value: 4, color: '#ff6b6b' },
+        { label: 'Completed (MTD)', value: 18, color: '#48ddbc' },
+        { label: 'Total Cost (MTD)', value: '$5,200', color: '#ffc633' },
+        { label: 'Avg Downtime', value: '2.5 Days' }
+      ]
+    };
+  },
   'GET /maintenance': async () => {
     await delay(500);
     return maintenanceLogs;
@@ -260,6 +403,22 @@ const handlers: Record<string, (body?: any, path?: string) => Promise<any>> = {
     }
 
     return log;
+  },
+  'GET /expenses/summary': async () => {
+    await delay(300);
+    return {
+      chartData: [
+        { name: 'Mon', value: 1200 }, { name: 'Tue', value: 1400 },
+        { name: 'Wed', value: 1100 }, { name: 'Thu', value: 1800 },
+        { name: 'Fri', value: 1500 }, { name: 'Sat', value: 500 }, { name: 'Sun', value: 300 }
+      ],
+      stats: [
+        { label: 'Total Expenses (MTD)', value: '$48,200', color: '#ff6b6b' },
+        { label: 'Fuel Cost', value: '$45,000', color: '#ffc633' },
+        { label: 'Maintenance Cost', value: '$2,800', color: '#558ded' },
+        { label: 'Avg Cost/Km', value: '$1.24' }
+      ]
+    };
   },
   'GET /fuel-logs': async () => {
     await delay(500);

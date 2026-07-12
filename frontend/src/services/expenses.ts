@@ -63,8 +63,9 @@ export async function createFuelLog(data: Record<string, any>): Promise<FuelLog>
   return normalizeFuelLog(raw);
 }
 
-export async function getExpenses(): Promise<Expense[]> {
-  const raw = await apiCall<any[]>('/api/expenses');
+export async function getExpenses(filters?: Record<string, string>): Promise<Expense[]> {
+  const query = filters ? '?' + new URLSearchParams(filters).toString() : '';
+  const raw = await apiCall<any[]>(`/api/expenses${query}`);
   return raw.map(normalizeExpense);
 }
 
@@ -99,3 +100,9 @@ export async function createExpense(data: Record<string, any>): Promise<Expense>
   return normalizeExpense(raw);
 }
 
+import type { SummaryData } from './vehicles.ts';
+
+export async function getExpensesSummary(filters?: Record<string, string>): Promise<SummaryData> {
+  const query = filters ? '?' + new URLSearchParams(filters).toString() : '';
+  return apiCall<SummaryData>(`/api/expenses/summary${query}`);
+}

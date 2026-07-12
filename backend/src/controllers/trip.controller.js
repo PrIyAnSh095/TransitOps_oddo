@@ -5,11 +5,19 @@ const tripService = require('../services/trip.service');
 // @route   GET /api/trips
 // @access  Private
 const getTrips = asyncHandler(async (req, res) => {
-  const trips = await tripService.getAllTrips();
+  const trips = await tripService.getAllTrips(req.query);
   res.status(200).json({
     success: true,
     message: 'Trips fetched successfully',
     data: trips
+  });
+});
+
+const getTripSummary = asyncHandler(async (req, res) => {
+  const summary = await tripService.getTripSummary(req.query);
+  res.status(200).json({
+    success: true,
+    data: summary
   });
 });
 
@@ -73,8 +81,10 @@ const cancelTrip = asyncHandler(async (req, res) => {
   });
 });
 
+
 module.exports = {
   getTrips,
+  getTripSummary,
   getTripById,
   createTrip,
   dispatchTrip,

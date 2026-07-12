@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { KeyRound, Terminal, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { apiCall } from '../../services/api';
 
 export function ResetPassword() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
-  const navigate = useNavigate();
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');

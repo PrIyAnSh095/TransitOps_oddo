@@ -2,9 +2,64 @@ const tripRepository = require('../repositories/trip.repository');
 const vehicleRepository = require('../repositories/vehicle.repository');
 const driverRepository = require('../repositories/driver.repository');
 
+const Trip = require('../models/Trip');
+const { buildTimeSeriesPipeline, formatChartData } = require('../utils/analytics');
+
 class TripService {
-  async getAllTrips() {
-    return await tripRepository.findAll();
+  async getAllTrips(query = {}) {
+    const { status, search, fromDate, toDate } = query;
+    const match = {};
+
+    if (status && status !== 'All') match.status = status.toUpperCase();
+    if (fromDate || toDate) {
+      match.createdAt = {};
+      if (fromDate) match.createdAt.$gte = new Date(fromDate);
+      if (toDate) match.createdAt.$lte = new Date(toDate);
+    }
+    
+    // Simple regex search on tripCode, source, destination
+    if (search) {
+      match.$or = [
+        { tripNumber: { $regex: search, $options: 'i' } },
+        { source: { $regex: search, $options: 'i' } },
+        { destination: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    return await Trip.find(match).populate('vehicle driver').sort({ createdAt: -1 });
+  }
+
+  async getTripSummary(query) {
+    const pipeline = buildTimeSeriesPipeline(query, 'createdAt');
+    const results = await Trip.aggregate(pipeline);
+    const chartData = formatChartData(results, query.period || 'monthly');
+
+    // Also get overall stats for the current filters
+    const match = pipeline[0].$match;
+    const statsResult = await Trip.aggregate([
+      { $match: match },
+      { 
+        $group: { 
+          _id: null, 
+          total: { $sum: 1 },
+          completed: { $sum: { $cond: [{ $eq: ['$status', 'COMPLETED'] }, 1, 0] } },
+          cancelled: { $sum: { $cond: [{ $eq: ['$status', 'CANCELLED'] }, 1, 0] } },
+          avgDistance: { $avg: '$actualDistance' }
+        } 
+      }
+    ]);
+
+    const stats = statsResult[0] || { total: 0, completed: 0, cancelled: 0, avgDistance: 0 };
+
+    return {
+      chartData,
+      stats: [
+        { label: 'Total Trips', value: stats.total },
+        { label: 'Completed', value: stats.completed, color: '#48ddbc' },
+        { label: 'Cancelled', value: stats.cancelled, color: '#ff6b6b' },
+        { label: 'Avg Distance', value: `${(stats.avgDistance || 0).toFixed(1)} km` }
+      ]
+    };
   }
 
   async getTripById(id) {
