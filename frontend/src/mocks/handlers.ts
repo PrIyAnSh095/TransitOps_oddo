@@ -363,6 +363,138 @@ const handlers: Record<string, (body?: any, path?: string) => Promise<any>> = {
       { month: 'Jun', revenue: totalRevenue > 65000 ? totalRevenue : 65000 },
     ];
 
+    // Mock Chart Datasets
+    const revenueVsCost = [
+      { month: 'Jan', revenue: 45000, cost: 32000 },
+      { month: 'Feb', revenue: 52000, cost: 35000 },
+      { month: 'Mar', revenue: 48000, cost: 33000 },
+      { month: 'Apr', revenue: 61000, cost: 41000 },
+      { month: 'May', revenue: 59000, cost: 39000 },
+      { month: 'Jun', revenue: 65000, cost: 42000 },
+    ];
+
+    const fleetUtilizationTrend = [
+      { date: 'Mon', utilization: 85 },
+      { date: 'Tue', utilization: 88 },
+      { date: 'Wed', utilization: 92 },
+      { date: 'Thu', utilization: 90 },
+      { date: 'Fri', utilization: 95 },
+      { date: 'Sat', utilization: 75 },
+      { date: 'Sun', utilization: 70 },
+    ];
+
+    const fuelCostByVehicleType = [
+      { type: 'Heavy Truck', cost: 12000 },
+      { type: 'Light Van', cost: 4500 },
+      { type: 'Bus', cost: 8500 },
+      { type: 'Pickup', cost: 3200 },
+    ];
+
+    const topFuelConsumingVehicles = [
+      { name: 'TRK-001 (Volvo FH16)', fuel: 2400 },
+      { name: 'TRK-005 (Scania R500)', fuel: 2150 },
+      { name: 'BUS-012 (Mercedes Tourismo)', fuel: 1900 },
+      { name: 'TRK-002 (Volvo FH16)', fuel: 1850 },
+      { name: 'VAN-008 (Ford Transit)', fuel: 950 },
+    ];
+
+    const maintenanceCostTrend = [
+      { month: 'Jan', cost: 5200 },
+      { month: 'Feb', cost: 4800 },
+      { month: 'Mar', cost: 7100 },
+      { month: 'Apr', cost: 4900 },
+      { month: 'May', cost: 5500 },
+      { month: 'Jun', cost: 6200 },
+    ];
+
+    const topMaintenanceCostVehicles = [
+      { name: 'TRK-002 (Volvo FH16)', cost: 4500 },
+      { name: 'BUS-010 (Mercedes Tourismo)', cost: 3800 },
+      { name: 'TRK-001 (Volvo FH16)', cost: 2900 },
+      { name: 'VAN-004 (Ford Transit)', cost: 1800 },
+      { name: 'TRK-007 (Scania R500)', cost: 1500 },
+    ];
+
+    const vehicleTypeDistribution = [
+      { type: 'Heavy Truck', count: 12 },
+      { type: 'Light Van', count: 8 },
+      { type: 'Bus', count: 5 },
+      { type: 'Pickup', count: 3 },
+    ];
+
+    const expenseDistribution = [
+      { expenseType: 'Fuel', amount: 45000 },
+      { expenseType: 'Maintenance', amount: 28000 },
+      { expenseType: 'Tolls', amount: 8500 },
+      { expenseType: 'Insurance', amount: 12000 },
+      { expenseType: 'Other', amount: 4500 },
+    ];
+
+    const driverPerformanceRanking = [
+      { name: 'John Doe', score: 98 },
+      { name: 'Jane Smith', score: 95 },
+      { name: 'Robert Johnson', score: 92 },
+      { name: 'Emily Davis', score: 88 },
+      { name: 'Michael Wilson', score: 85 },
+    ];
+
+    const tripCompletionTrend = [
+      { month: 'Jan', trips: 145 },
+      { month: 'Feb', trips: 162 },
+      { month: 'Mar', trips: 158 },
+      { month: 'Apr', trips: 185 },
+      { month: 'May', trips: 178 },
+      { month: 'Jun', trips: 195 },
+    ];
+
+    const revenueByVehicleType = [
+      { type: 'Heavy Truck', revenue: 185000 },
+      { type: 'Light Van', revenue: 65000 },
+      { type: 'Bus', revenue: 95000 },
+      { type: 'Pickup', revenue: 35000 },
+    ];
+
+    const vehicleROIChart = [
+      { name: 'TRK-001', roi: 18.5 },
+      { name: 'TRK-002', roi: 15.2 },
+      { name: 'VAN-005', roi: 22.4 },
+      { name: 'BUS-012', roi: 12.8 },
+      { name: 'TRK-005', roi: 19.1 },
+    ];
+
+    const monthlyFuelEfficiency = [
+      { month: 'Jan', efficiency: 4.2 },
+      { month: 'Feb', efficiency: 4.1 },
+      { month: 'Mar', efficiency: 4.4 },
+      { month: 'Apr', efficiency: 4.5 },
+      { month: 'May', efficiency: 4.3 },
+      { month: 'Jun', efficiency: 4.6 },
+    ];
+
+    const averageTripDistance = [
+      { month: 'Jan', distance: 340 },
+      { month: 'Feb', distance: 365 },
+      { month: 'Mar', distance: 355 },
+      { month: 'Apr', distance: 390 },
+      { month: 'May', distance: 385 },
+      { month: 'Jun', distance: 410 },
+    ];
+
+    const vehicleDowntime = [
+      { name: 'TRK-002', days: 12 },
+      { name: 'BUS-010', days: 8 },
+      { name: 'TRK-001', days: 5 },
+      { name: 'VAN-004', days: 3 },
+      { name: 'TRK-007', days: 2 },
+    ];
+
+    const tripStatusDistribution = [
+      { status: 'Completed', count: 850 },
+      { status: 'In Progress', count: 45 },
+      { status: 'Planned', count: 120 },
+      { status: 'Cancelled', count: 15 },
+    ];
+
     return {
       fuelEfficiency,
       fleetUtilization,
@@ -371,7 +503,24 @@ const handlers: Record<string, (body?: any, path?: string) => Promise<any>> = {
       monthlyRevenue: cleanMonthlyRevenue,
       topCostliestVehicles,
       totalRevenue,
-      totalAcquisition
+      totalAcquisition,
+      
+      revenueVsCost,
+      fleetUtilizationTrend,
+      fuelCostByVehicleType,
+      topFuelConsumingVehicles,
+      maintenanceCostTrend,
+      topMaintenanceCostVehicles,
+      vehicleTypeDistribution,
+      expenseDistribution,
+      driverPerformanceRanking,
+      tripCompletionTrend,
+      revenueByVehicleType,
+      vehicleROIChart,
+      monthlyFuelEfficiency,
+      averageTripDistance,
+      vehicleDowntime,
+      tripStatusDistribution
     };
   }
 };
